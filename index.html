@@ -14,7 +14,7 @@
     <div id="presentation-container">
         <div class="overlay"></div>
         <div class="content-wrapper">
-            <h1 id="slide-title" class="slide-title">Cargando...</h1>
+            <h1 id="slide-title" class="slide-title">Esperando Configuración...</h1>
             
             <div class="stats-container">
                 <div class="stat-box">
@@ -28,6 +28,36 @@
             </div>
             
             <div id="animation-placeholder" style="height: 50px;"></div>
+        </div>
+    </div>
+
+    <!-- Configuration / Setup Screen -->
+    <div id="setup-screen" class="setup-overlay">
+        <div class="setup-content">
+            <h1 class="setup-title">Configuración de la Presentación</h1>
+            
+            <div class="upload-section">
+                <h3>1. Cargar Imágenes</h3>
+                <p>Selecciona las imágenes que deseas mostrar en secuencia.</p>
+                <label for="file-upload" class="custom-file-upload">
+                    📂 Seleccionar Imágenes (PNG, JPG)
+                </label>
+                <input id="file-upload" type="file" multiple accept="image/*"/>
+                <div id="file-list" class="file-list">Ningún archivo seleccionado</div>
+            </div>
+
+            <div class="upload-section">
+                <h3>2. Opciones</h3>
+                <label>Título general (opcional):</label>
+                <input type="text" id="config-title" placeholder="Ej: Resultados Semana 4" class="config-input">
+            </div>restart" class="btn btn-outline" style="margin-right: 1rem;">⚙️ Config</button>
+            <button id="btn-
+
+            <div class="setup-actions">
+                <button id="btn-start-custom" class="btn btn-success btn-large" disabled>Iniciar con mis Imágenes</button>
+                <span class="or-divider">ó</span>
+                <button id="btn-load-default" class="btn btn-outline">Cargar desde content.json</button>
+            </div>
         </div>
     </div>
 

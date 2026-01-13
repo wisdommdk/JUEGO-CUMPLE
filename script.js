@@ -4,6 +4,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentSlideIndex = 0;
     let totalScore = 0;
     let appConfig = {};
+    let tempFiles = [];
 
     // DOM Elements
     const dom = {
@@ -21,13 +22,63 @@ document.addEventListener('DOMContentLoaded', () => {
         pointsModal: document.getElementById('points-modal'),
         pointBtns: document.querySelectorAll('.point-btn'),
         btnSkipPoints: document.getElementById('btn-skip-points'),
-        audioPlayer: document.getElementById('audio-fanfare')
+        audioPlayer: document.getElementById('audio-fanfare'),
+        // Setup Screen Elements
+        setupScreen: document.getElementById('setup-screen'),
+        fileInput: document.getElementById('file-upload'),
+        fileList: document.getElementById('file-list'),
+        configTitle: document.getElementById('config-title'),
+        btnStartCustom: document.getElementById('btn-start-custom'),
+        btnLoadDefault: document.getElementById('btn-load-default'),
+        btnRestart: document.getElementById('btn-restart')
     };
 
-    // Initialize
-    init();
+    // Initialize - Now waits for user
+    initSetup();
 
-    async function init() {
+    function initSetup() {
+        setupEventListeners();
+        // Setup screen is visible by default via CSS/HTML structure
+    }
+
+    // --- SETUP LOGIC ---
+    function handleFileSelect(e) {
+        if (e.target.files && e.target.files.length > 0) {
+            tempFiles = Array.from(e.target.files);
+            dom.fileList.innerText = `${tempFiles.length} archivos seleccionados:\n` + tempFiles.map(f => f.name).join(', ');
+            dom.btnStartCustom.disabled = false;
+        } else {
+            dom.fileList.innerText = "Ningún archivo seleccionado";
+            dom.btnStartCustom.disabled = true;
+        }
+    }
+
+    function startCustomPresentation() {
+        if (tempFiles.length === 0) return;
+
+        const customTitle = dom.configTitle.value.trim();
+        
+        // Transform files to slides
+        slidesData = tempFiles.map((file, index) => {
+            return {
+                id: index + 1,
+                title: customTitle ? `${customTitle} - ${index + 1}` : file.name.split('.')[0], // Use filename as title if no custom title
+                image: URL.createObjectURL(file), // Create blob URL
+                defaultQuota: 0,
+                defaultCurrent: 0
+            };
+        });
+
+        // Use default config for app settings if needed
+        appConfig = { soundEffect: "assets/sounds/fanfare.mp3" };
+        dom.audioPlayer.src = appConfig.soundEffect;
+
+        // Hide setup, show pres
+        dom.setupScreen.classList.add('hidden');
+        loadSlide(0);
+    }
+
+    async function startDefaultPresentation() {
         try {
             const response = await fetch('content.json');
             const data = await response.json();
@@ -39,16 +90,22 @@ document.addEventListener('DOMContentLoaded', () => {
                 dom.audioPlayer.src = appConfig.soundEffect;
             }
 
-            loadSlide(currentSlideIndex);
-            setupEventListeners();
+            dom.setupScreen.classList.add('hidden');
+            loadSlide(0);
         } catch (error) {
             console.error("Error loading content.json:", error);
-            dom.title.innerText = "Error cargando datos. Verifique content.json";
+            alert("Error cargando content.json. Verifica que el archivo exista.");
         }
     }
 
+    function showSetup() {
+        dom.setupScreen.classList.remove('hidden');
+    }
+
+    // --- PRESENTATION LOGIC ---
+
     function loadSlide(index) {
-        if (index < 0 || index >= slidesData.length) return;
+        if (slidesData.length === 0) return;
         
         const slide = slidesData[index];
         currentSlideIndex = index;
@@ -163,6 +220,13 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function setupEventListeners() {
+        // Setup Screen Events
+        dom.fileInput.addEventListener('change', handleFileSelect);
+        dom.btnStartCustom.addEventListener('click', startCustomPresentation);
+        dom.btnLoadDefault.addEventListener('click', startDefaultPresentation);
+        dom.btnRestart.addEventListener('click', showSetup);
+
+        // Presentation Events
         dom.btnNext.addEventListener('click', nextSlide);
         dom.btnPrev.addEventListener('click', prevSlide);
         
@@ -179,6 +243,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Keyboard navigation
         document.addEventListener('keydown', (e) => {
+            // Prevent navigating if we are in setup mode (check if setup screen is hidden)
+            if (!dom.setupScreen.classList.contains('hidden')) return;
+
             if(e.key === 'ArrowRight') nextSlide();
             if(e.key === 'ArrowLeft') prevSlide();
         });
