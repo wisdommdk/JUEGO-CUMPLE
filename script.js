@@ -167,33 +167,52 @@ document.addEventListener('DOMContentLoaded', () => {
     function triggerCelebration() {
         // Visuals
         dom.displayCurrent.classList.add('success');
+        document.body.classList.add('party-mode'); // Disco background
+        dom.container.classList.add('shake-active'); // Shake container
         
-        // Confetti
-        const duration = 3000;
-        const animationEnd = Date.now() + duration;
-        const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 };
+        // Show Big Banner
+        const banner = document.getElementById('celebration-banner');
+        banner.classList.remove('hidden');
+        banner.classList.add('visible');
 
+        
+        // Confetti - INTENSE
+        const duration = 5000;
+        const animationEnd = Date.now() + duration;
+        const defaults = { startVelocity: 45, spread: 360, ticks: 100, zIndex: 0 };
         const randomInRange = (min, max) => Math.random() * (max - min) + min;
 
+        // Big initial burst
+        confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
+        
         const interval = setInterval(function() {
             const timeLeft = animationEnd - Date.now();
 
             if (timeLeft <= 0) {
+                // Cleanup
+                document.body.classList.remove('party-mode');
+                dom.container.classList.remove('shake-active');
+                banner.classList.remove('visible');
+                banner.classList.add('hidden');
+                
                 return clearInterval(interval);
             }
 
             const particleCount = 50 * (timeLeft / duration);
+            // Random bursts from different angles
             confetti(Object.assign({}, defaults, { particleCount, origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 } }));
             confetti(Object.assign({}, defaults, { particleCount, origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 } }));
-        }, 250);
+            // Center fountain
+            confetti({ particleCount: 5, angle: 90, spread: 45, origin: { x: 0.5, y: 0.8 }, colors: ['#fbbf24', '#ff0000'] });
+        }, 200);
 
         // Sound
         playFanfare();
 
-        // Show Points Modal
+        // Show Points Modal with delay
         setTimeout(() => {
             dom.pointsModal.classList.add('visible');
-        }, 1500);
+        }, 3000); // Wait longer to enjoy the celebration
     }
 
     function playFanfare() {

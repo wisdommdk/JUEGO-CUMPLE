@@ -33,11 +33,13 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    background-size: contain; /* Changed from cover to contain to show full image */
+    background-size: contain; 
     background-position: center;
     background-repeat: no-repeat;
     transition: background-image 0.5s ease-in-out;
-    background-color: var(--dark); /* Ensure background is dark for letterboxing */
+    background-color: var(--dark);
+    /* Space for celebration shake */
+    perspective: 1000px;
 }
 
 /* Semi-transparent overlay to make text readable */
@@ -49,6 +51,7 @@ body {
     height: 100%;
     background: rgba(0, 0, 0, 0.6);
     z-index: 1;
+    transition: background 0.3s;
 }
 
 .content-wrapper {
@@ -57,6 +60,7 @@ body {
     text-align: center;
     width: 80%;
     max-width: 1200px;
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .slide-title {
@@ -82,6 +86,7 @@ body {
     border-radius: 1rem;
     border: 1px solid rgba(255,255,255,0.2);
     min-width: 300px;
+    transition: transform 0.3s, box-shadow 0.3s;
 }
 
 .stat-label {
@@ -96,11 +101,109 @@ body {
     font-size: 3.5rem;
     font-weight: 700;
     color: var(--gold);
+    transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
+/* --- EXTREME FESTIVE STYLES --- */
+
+/* Huge Banner Text */
+.celebration-banner {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0);
+    font-size: 8rem;
+    font-weight: 900;
+    color: #fff;
+    text-shadow: 
+        0 0 10px #fff,
+        0 0 20px #fff,
+        0 0 40px #ff00de,
+        0 0 80px #ff00de,
+        0 0 90px #ff00de,
+        0 0 100px #ff00de,
+        0 0 150px #ff00de;
+    z-index: 20;
+    pointer-events: none;
+    white-space: nowrap;
+    opacity: 0;
+    transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.celebration-banner.visible {
+    transform: translate(-50%, -70%) scale(1); /* Move up slightly */
+    opacity: 1; 
+    animation: neonFlux 1.5s infinite alternate;
+}
+
+.celebration-banner.hidden {
+    display: none;
+}
+
+/* Enhancements for Success State */
 .stat-value.success {
-    color: #4ade80;
-    text-shadow: 0 0 10px #4ade80;
+    color: #fff;
+    transform: scale(1.5);
+    text-shadow: 
+        0 0 10px #4ade80,
+        0 0 20px #4ade80,
+        0 0 40px #22c55e,
+        0 0 80px #22c55e;
+    animation: pulseGold 0.8s infinite alternate;
+}
+
+/* Container Shake Effect */
+.shake-active {
+    animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+}
+
+.party-mode .overlay {
+    background: rgba(0, 0, 0, 0.3); /* Lighter overlay during party */
+    animation: discoBg 2s infinite;
+}
+
+/* Animations */
+@keyframes neonFlux {
+    from {
+        text-shadow: 
+            0 0 10px #fff,
+            0 0 20px #fff,
+            0 0 40px #ff00de,
+            0 0 80px #ff00de;
+    }
+    to {
+        text-shadow: 
+            0 0 5px #fff,
+            0 0 10px #fff,
+            0 0 20px #ff00de,
+            0 0 40px #ff00de,
+            0 0 100px #ff00de,
+            0 0 150px #ff00de;
+    }
+}
+
+@keyframes pulseGold {
+    0% { transform: scale(1.4); }
+    100% { transform: scale(1.6); }
+}
+
+@keyframes shake {
+    10%, 90% { transform: translate3d(-2px, 0, 0); }
+    20%, 80% { transform: translate3d(4px, 0, 0); }
+    30%, 50%, 70% { transform: translate3d(-8px, 0, 0); }
+    40%, 60% { transform: translate3d(8px, 0, 0); }
+}
+
+@keyframes discoBg {
+    0% { background: rgba(37, 99, 235, 0.4); }
+    33% { background: rgba(220, 38, 38, 0.4); }
+    66% { background: rgba(22, 163, 74, 0.4); }
+    100% { background: rgba(37, 99, 235, 0.4); }
+}
+
+@keyframes popIn {
+    0% { transform: scale(0.5); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
 }
 
 /* --- Control Panel (UI for the Operator) --- */
@@ -210,11 +313,6 @@ input[type="number"] {
     color: var(--primary);
 }
 
-/* Animation Classes */
-@keyframes popIn {
-    0% { transform: scale(0.5); opacity: 0; }
-    100% { transform: scale(1); opacity: 1; }
-}
 
 .celebrate-text {
     animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
