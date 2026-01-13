@@ -105,9 +105,14 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- PRESENTATION LOGIC ---
 
     function loadSlide(index) {
-        if (slidesData.length === 0) return;
+        if (!slidesData || slidesData.length === 0) return;
         
+        // Safety check for bounds
+        if (index < 0 || index >= slidesData.length) return;
+
         const slide = slidesData[index];
+        if (!slide) return;
+
         currentSlideIndex = index;
 
         // Update UI

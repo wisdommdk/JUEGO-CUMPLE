@@ -33,10 +33,11 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    background-size: cover;
+    background-size: contain; /* Changed from cover to contain to show full image */
     background-position: center;
     background-repeat: no-repeat;
     transition: background-image 0.5s ease-in-out;
+    background-color: var(--dark); /* Ensure background is dark for letterboxing */
 }
 
 /* Semi-transparent overlay to make text readable */
