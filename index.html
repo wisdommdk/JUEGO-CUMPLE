@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Presentación de Resultados</title>
+    <link rel="stylesheet" href="styles.css">
+    <!-- Confetti Library -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+</head>
+<body>
+
+    <!-- Main Presentation Area -->
+    <div id="presentation-container">
+        <div class="overlay"></div>
+        <div class="content-wrapper">
+            <h1 id="slide-title" class="slide-title">Cargando...</h1>
+            
+            <div class="stats-container">
+                <div class="stat-box">
+                    <span class="stat-label">Meta</span>
+                    <div id="display-quota" class="stat-value">0</div>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-label">Actual</span>
+                    <div id="display-current" class="stat-value">0</div>
+                </div>
+            </div>
+            
+            <div id="animation-placeholder" style="height: 50px;"></div>
+        </div>
+    </div>
+
+    <!-- Operator Control Panel (Bottom Bar) -->
+    <div id="control-panel">
+        <div class="controls-left">
+            <div class="input-group">
+                <label>Meta (Cuota)</label>
+                <input type="number" id="input-quota">
+            </div>
+            <div class="input-group">
+                <label>Actual (Logrado)</label>
+                <input type="number" id="input-current">
+            </div>
+            <button id="btn-validate" class="btn btn-success">Validar y Celebrar</button>
+        </div>
+
+        <div class="controls-center">
+            <h3 style="color: #94a3b8; font-size: 0.8rem; text-transform: uppercase;">Puntaje Total: <span id="total-score" style="color: white; font-size: 1.2rem;">0</span></h3>
+        </div>
+
+        <div class="controls-right nav-buttons">
+            <button id="btn-prev" class="btn btn-outline">&larr; Anterior</button>
+            <span id="slide-indicator" style="color: #94a3b8; font-size: 0.8rem;">1 / 1</span>
+            <button id="btn-next" class="btn btn-primary">Siguiente &rarr;</button>
+        </div>
+    </div>
+
+    <!-- Points Selection Modal -->
+    <div id="points-modal" class="points-overlay">
+        <h2 class="points-title">¡Meta Cumplida! Asignar Puntos:</h2>
+        <div class="points-buttons">
+            <button class="point-btn" data-points="1">1</button>
+            <button class="point-btn" data-points="2">2</button>
+            <button class="point-btn" data-points="3">3</button>
+        </div>
+        <button id="btn-skip-points" class="btn btn-outline" style="margin-top: 2rem;">Cancelar / Cerrar</button>
+        <!-- Audio Element for Fanfare -->
+        <audio id="audio-fanfare" hidden></audio>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

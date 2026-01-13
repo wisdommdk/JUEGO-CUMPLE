@@ -1,0 +1,186 @@
+document.addEventListener('DOMContentLoaded', () => {
+    // State
+    let slidesData = [];
+    let currentSlideIndex = 0;
+    let totalScore = 0;
+    let appConfig = {};
+
+    // DOM Elements
+    const dom = {
+        container: document.getElementById('presentation-container'),
+        title: document.getElementById('slide-title'),
+        displayQuota: document.getElementById('display-quota'),
+        displayCurrent: document.getElementById('display-current'),
+        inputQuota: document.getElementById('input-quota'),
+        inputCurrent: document.getElementById('input-current'),
+        btnValidate: document.getElementById('btn-validate'),
+        btnPrev: document.getElementById('btn-prev'),
+        btnNext: document.getElementById('btn-next'),
+        indicator: document.getElementById('slide-indicator'),
+        scoreDisplay: document.getElementById('total-score'),
+        pointsModal: document.getElementById('points-modal'),
+        pointBtns: document.querySelectorAll('.point-btn'),
+        btnSkipPoints: document.getElementById('btn-skip-points'),
+        audioPlayer: document.getElementById('audio-fanfare')
+    };
+
+    // Initialize
+    init();
+
+    async function init() {
+        try {
+            const response = await fetch('content.json');
+            const data = await response.json();
+            
+            appConfig = data.config;
+            slidesData = data.slides;
+            
+            if (appConfig.soundEffect) {
+                dom.audioPlayer.src = appConfig.soundEffect;
+            }
+
+            loadSlide(currentSlideIndex);
+            setupEventListeners();
+        } catch (error) {
+            console.error("Error loading content.json:", error);
+            dom.title.innerText = "Error cargando datos. Verifique content.json";
+        }
+    }
+
+    function loadSlide(index) {
+        if (index < 0 || index >= slidesData.length) return;
+        
+        const slide = slidesData[index];
+        currentSlideIndex = index;
+
+        // Update UI
+        dom.title.innerText = slide.title;
+        dom.container.style.backgroundImage = `url('${slide.image}')`;
+        
+        // Reset display values
+        dom.displayQuota.innerText = slide.defaultQuota || 0;
+        dom.displayCurrent.innerText = slide.defaultCurrent || 0;
+        
+        // Populate inputs with defaults
+        dom.inputQuota.value = slide.defaultQuota || 0;
+        dom.inputCurrent.value = slide.defaultCurrent || 0;
+        
+        // Update Indicator
+        dom.indicator.innerText = `${index + 1} / ${slidesData.length}`;
+
+        // Reset Styles
+        dom.displayCurrent.classList.remove('success');
+    }
+
+    function nextSlide() {
+        if (currentSlideIndex < slidesData.length - 1) {
+            loadSlide(currentSlideIndex + 1);
+        }
+    }
+
+    function prevSlide() {
+        if (currentSlideIndex > 0) {
+            loadSlide(currentSlideIndex - 1);
+        }
+    }
+
+    function validateResult() {
+        // Sync inputs to display
+        const quota = parseFloat(dom.inputQuota.value);
+        const current = parseFloat(dom.inputCurrent.value);
+
+        dom.displayQuota.innerText = quota;
+        dom.displayCurrent.innerText = current;
+
+        // Animation logic
+        animateValue(dom.displayCurrent, 0, current, 1000);
+
+        if (current >= quota) {
+            setTimeout(() => {
+                triggerCelebration();
+            }, 1000); // Wait for number count up
+        }
+    }
+
+    function triggerCelebration() {
+        // Visuals
+        dom.displayCurrent.classList.add('success');
+        
+        // Confetti
+        const duration = 3000;
+        const animationEnd = Date.now() + duration;
+        const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 };
+
+        const randomInRange = (min, max) => Math.random() * (max - min) + min;
+
+        const interval = setInterval(function() {
+            const timeLeft = animationEnd - Date.now();
+
+            if (timeLeft <= 0) {
+                return clearInterval(interval);
+            }
+
+            const particleCount = 50 * (timeLeft / duration);
+            confetti(Object.assign({}, defaults, { particleCount, origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 } }));
+            confetti(Object.assign({}, defaults, { particleCount, origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 } }));
+        }, 250);
+
+        // Sound
+        playFanfare();
+
+        // Show Points Modal
+        setTimeout(() => {
+            dom.pointsModal.classList.add('visible');
+        }, 1500);
+    }
+
+    function playFanfare() {
+        dom.audioPlayer.currentTime = 0;
+        dom.audioPlayer.play().catch(e => console.log("Audio requires interaction first or file missing", e));
+    }
+
+    function assignPoints(points) {
+        totalScore += points;
+        dom.scoreDisplay.innerText = totalScore;
+        closeModal();
+    }
+
+    function closeModal() {
+        dom.pointsModal.classList.remove('visible');
+    }
+
+    function animateValue(obj, start, end, duration) {
+        let startTimestamp = null;
+        const step = (timestamp) => {
+            if (!startTimestamp) startTimestamp = timestamp;
+            const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+            obj.innerHTML = Math.floor(progress * (end - start) + start);
+            if (progress < 1) {
+                window.requestAnimationFrame(step);
+            }
+        };
+        window.requestAnimationFrame(step);
+    }
+
+    function setupEventListeners() {
+        dom.btnNext.addEventListener('click', nextSlide);
+        dom.btnPrev.addEventListener('click', prevSlide);
+        
+        dom.btnValidate.addEventListener('click', validateResult);
+        
+        dom.pointBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const points = parseInt(e.target.dataset.points);
+                assignPoints(points);
+            });
+        });
+
+        dom.btnSkipPoints.addEventListener('click', closeModal);
+
+        // Keyboard navigation
+        document.addEventListener('keydown', (e) => {
+            if(e.key === 'ArrowRight') nextSlide();
+            if(e.key === 'ArrowLeft') prevSlide();
+        });
+    }
+});
