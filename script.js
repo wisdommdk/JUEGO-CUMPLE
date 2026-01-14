@@ -21,14 +21,19 @@ document.addEventListener('DOMContentLoaded', () => {
         btnNext: document.getElementById('btn-next'),
         indicator: document.getElementById('slide-indicator'),
         mainScoreDisplay: document.getElementById('display-total-score-main'),
+        // Extra Points Display Elements
+        displayPrevPoints: document.getElementById('display-prev-points'),
+        displayBogotaPoints: document.getElementById('display-bogota-points'),
+        
         audioPlayer: document.getElementById('audio-fanfare'),
         // Setup Screen Elements
         setupScreen: document.getElementById('setup-screen'),
         fileInput: document.getElementById('file-upload'),
         fileList: document.getElementById('file-list'),
         configTitle: document.getElementById('config-title'),
+        configPrevPoints: document.getElementById('config-prev-points'),
+        configBogotaPoints: document.getElementById('config-bogota-points'),
         btnStartCustom: document.getElementById('btn-start-custom'),
-        btnLoadDefault: document.getElementById('btn-load-default'),
         btnRestart: document.getElementById('btn-restart')
     };
 
@@ -118,9 +123,10 @@ document.addEventListener('DOMContentLoaded', () => {
                             
                             // Recalculate Total Score
                             updateTotalScore();
+                            updateExtraPointsDisplay();
 
                             // Restore basics and start
-                            appConfig = { soundEffect: "assets/sounds/fanfare.mp3" };
+                            appConfig = { soundEffect: "assets/sounds/Fans%20Cheering.mp3" };
                             dom.audioPlayer.src = appConfig.soundEffect;
                             dom.setupScreen.classList.add('hidden');
                             loadSlide(0);
@@ -219,6 +225,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function initSetup() {
         setupEventListeners();
+        
+        // Restore config inputs if available
+        if(dom.configPrevPoints) dom.configPrevPoints.value = localStorage.getItem('pres_prevPoints') || '';
+        if(dom.configBogotaPoints) dom.configBogotaPoints.value = localStorage.getItem('pres_bogotaPoints') || '';
+        
         // Check for total session restore (images included)
         checkSavedSession();
     }
@@ -243,6 +254,15 @@ document.addEventListener('DOMContentLoaded', () => {
         dom.btnStartCustom.disabled = true;
 
         const customTitleInput = dom.configTitle.value.trim();
+        
+        // Capture extra config
+        const prevPoints = dom.configPrevPoints.value.trim();
+        const bogotaPoints = dom.configBogotaPoints.value.trim();
+        
+        // Persist extra config simply in localStorage for now since DB schema is slides-only
+        // Or we could attach it to appConfig and maybe save that somewhere, but currently appConfig is transient
+        localStorage.setItem('pres_prevPoints', prevPoints);
+        localStorage.setItem('pres_bogotaPoints', bogotaPoints);
 
         // Sort files to ensure sequence matches mapping
         // Using numeric sort so Page_10 comes after Page_9, not Page_1
@@ -250,28 +270,27 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // New Session with FRESH files
         slidesData = tempFiles.map((file, index) => {
-            let displayTitle = customTitleInput;
-
-            // Attempt to map filename to specific statistic name
-            // Looking for number in "Page_XX"
+            // Determine Stat Name (fallback if no custom title, or logic for referencing)
+            let statName = "";
             const match = file.name.match(/Page_(\d+)/i);
             if (match && match[1]) {
                 const pageNum = parseInt(match[1], 10);
-                // 1-based to 0-based index
                 if (pageNum >= 1 && pageNum <= STAT_NAMES.length) {
-                    displayTitle = STAT_NAMES[pageNum - 1];
+                    statName = STAT_NAMES[pageNum - 1];
                 }
             } else {
-                // Fallback: Use simple index mapping if filenames don't strictly match but we want to apply the list
-                // User said "Invariablemente... oic_Page_01", but just in case:
                 if (index < STAT_NAMES.length) {
-                    displayTitle = STAT_NAMES[index];
+                    statName = STAT_NAMES[index];
                 }
             }
 
+            // USER REQUEST: If Custom Title is provided, use it for ALL slides.
+            // If empty, fallback to Stat Name.
+            const displayTitle = customTitleInput ? customTitleInput : (statName || `Slide ${index + 1}`);
+
             return {
                 id: index + 1,
-                title: displayTitle || `Slide ${index + 1}`, 
+                title: displayTitle, 
                 image: URL.createObjectURL(file), // Create blob URL for viewing
                 blob: file, // Store File for DB
                 quota1: 0,
@@ -291,35 +310,16 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         // Use default config for app settings if needed
-        appConfig = { soundEffect: "assets/sounds/fanfare.mp3" };
+        appConfig = { soundEffect: "assets/sounds/Fans%20Cheering.mp3" };
         dom.audioPlayer.src = appConfig.soundEffect;
         
         // Calc initial score
         updateTotalScore();
+        updateExtraPointsDisplay();
 
         // Hide setup, show pres
         dom.setupScreen.classList.add('hidden');
         loadSlide(0);
-    }
-
-    async function startDefaultPresentation() {
-        try {
-            const response = await fetch('content.json');
-            const data = await response.json();
-            
-            appConfig = data.config;
-            slidesData = data.slides;
-            
-            if (appConfig.soundEffect) {
-                dom.audioPlayer.src = appConfig.soundEffect;
-            }
-
-            dom.setupScreen.classList.add('hidden');
-            loadSlide(0);
-        } catch (error) {
-            console.error("Error loading content.json:", error);
-            alert("Error cargando content.json. Verifica que el archivo exista.");
-        }
     }
 
     function showSetup() {
@@ -361,6 +361,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Update Active Stat in Grid
         updateActiveStat(index);
+        updateStatsMarkers();
     }
     
     function renderStatsList() {
@@ -372,7 +373,19 @@ document.addEventListener('DOMContentLoaded', () => {
         STAT_NAMES.forEach((name, index) => {
             const div = document.createElement('div');
             div.className = 'stat-item';
-            div.innerText = name;
+            
+            // Create structure for markers
+            const markers = document.createElement('div');
+            markers.className = 'stat-markers';
+            markers.style.height = '1.5rem'; // Reserve space
+            markers.id = `markers-${index}`;
+            
+            const nameSpan = document.createElement('span');
+            nameSpan.innerText = name;
+
+            div.appendChild(markers);
+            div.appendChild(nameSpan);
+            
             div.dataset.index = index;
             
             // Add click interaction
@@ -381,6 +394,24 @@ document.addEventListener('DOMContentLoaded', () => {
             });
 
             grid.appendChild(div);
+        });
+    }
+
+    function updateStatsMarkers() {
+        if (!slidesData) return;
+        
+        slidesData.forEach((slide, index) => {
+            const markerDiv = document.getElementById(`markers-${index}`);
+            if (markerDiv) {
+                const points = slide.points || 0;
+                if (points >= 3) {
+                     markerDiv.innerText = "✅✅✅";
+                } else if (points >= 1) {
+                     markerDiv.innerText = "✅";
+                } else {
+                     markerDiv.innerText = "";
+                }
+            }
         });
     }
 
@@ -434,6 +465,9 @@ document.addEventListener('DOMContentLoaded', () => {
             // Save updates to DB
             updateSlideInDB(slidesData[currentSlideIndex]).catch(e => console.error("Error saving to DB", e));
         }
+        
+        // Refresh markers
+        updateStatsMarkers();
 
         dom.displayQuota1.innerText = quota1;
         dom.displayQuota3.innerText = quota3;
@@ -488,7 +522,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Points already updated via updateTotalScore
         
         // Confetti - INTENSE
-        const duration = 5000;
+        const duration = 7000;
         const animationEnd = Date.now() + duration;
         const defaults = { startVelocity: 45, spread: 360, ticks: 100, zIndex: 0 };
         const randomInRange = (min, max) => Math.random() * (max - min) + min;
@@ -521,9 +555,29 @@ document.addEventListener('DOMContentLoaded', () => {
         playFanfare();
     }
 
+    function updateTotalScore() {
+        // Calculate total points from all slides
+        const sum = slidesData.reduce((acc, slide) => acc + (slide.points || 0), 0);
+        totalScore = sum;
+        if(dom.mainScoreDisplay) dom.mainScoreDisplay.innerText = totalScore;
+    }
+
+    function updateExtraPointsDisplay() {
+        const prev = localStorage.getItem('pres_prevPoints') || '0';
+        const bogota = localStorage.getItem('pres_bogotaPoints') || '0';
+        if(dom.displayPrevPoints) dom.displayPrevPoints.innerText = prev;
+        if(dom.displayBogotaPoints) dom.displayBogotaPoints.innerText = bogota;
+    }
+
     function playFanfare() {
         dom.audioPlayer.currentTime = 0;
         dom.audioPlayer.play().catch(e => console.log("Audio requires interaction first or file missing", e));
+        
+        // Stop after 7 seconds
+        setTimeout(() => {
+            dom.audioPlayer.pause();
+            dom.audioPlayer.currentTime = 0;
+        }, 7000);
     }
 
     function assignPoints(points) {
@@ -560,7 +614,6 @@ document.addEventListener('DOMContentLoaded', () => {
         // Setup Screen Events
         dom.fileInput.addEventListener('change', handleFileSelect);
         dom.btnStartCustom.addEventListener('click', startCustomPresentation);
-        dom.btnLoadDefault.addEventListener('click', startDefaultPresentation);
         
         // Presentation Events
         dom.btnNext.addEventListener('click', nextSlide);
