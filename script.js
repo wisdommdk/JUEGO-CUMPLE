@@ -20,7 +20,7 @@ document.addEventListener('DOMContentLoaded', () => {
         btnPrev: document.getElementById('btn-prev'),
         btnNext: document.getElementById('btn-next'),
         indicator: document.getElementById('slide-indicator'),
-        scoreDisplay: document.getElementById('total-score'),
+        mainScoreDisplay: document.getElementById('display-total-score-main'),
         audioPlayer: document.getElementById('audio-fanfare'),
         // Setup Screen Elements
         setupScreen: document.getElementById('setup-screen'),
@@ -38,8 +38,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const DB_VERSION = 2; // Incremented version
     let db = null; // Declare explicitly at top level scope
 
+    // --- STAT NAMES CONFIG ---
+    const STAT_NAMES = [
+        "QSH", "FHS", "GI/GIWC", "GBS", "CASH", 
+        "ASSETRES VSD", "STP", "WDAH", "QTSM", "GIBY", 
+        "BIS/BISS", "NNCF", "NAMF", "NFSMC", "PCTRISFNC", "PDC"
+    ];
+
     // Initialize - Now waits for user
     initSetup();
+    renderStatsList(); // Render empty or predefined list on load
 
     async function openDB() {
         // If we have a db instance, verify it's not closed
@@ -234,13 +242,36 @@ document.addEventListener('DOMContentLoaded', () => {
         dom.btnStartCustom.innerText = "Guardando...";
         dom.btnStartCustom.disabled = true;
 
-        const customTitle = dom.configTitle.value.trim();
+        const customTitleInput = dom.configTitle.value.trim();
+
+        // Sort files to ensure sequence matches mapping
+        // Using numeric sort so Page_10 comes after Page_9, not Page_1
+        tempFiles.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' }));
         
         // New Session with FRESH files
         slidesData = tempFiles.map((file, index) => {
+            let displayTitle = customTitleInput;
+
+            // Attempt to map filename to specific statistic name
+            // Looking for number in "Page_XX"
+            const match = file.name.match(/Page_(\d+)/i);
+            if (match && match[1]) {
+                const pageNum = parseInt(match[1], 10);
+                // 1-based to 0-based index
+                if (pageNum >= 1 && pageNum <= STAT_NAMES.length) {
+                    displayTitle = STAT_NAMES[pageNum - 1];
+                }
+            } else {
+                // Fallback: Use simple index mapping if filenames don't strictly match but we want to apply the list
+                // User said "Invariablemente... oic_Page_01", but just in case:
+                if (index < STAT_NAMES.length) {
+                    displayTitle = STAT_NAMES[index];
+                }
+            }
+
             return {
                 id: index + 1,
-                title: customTitle ? customTitle : '', 
+                title: displayTitle || `Slide ${index + 1}`, 
                 image: URL.createObjectURL(file), // Create blob URL for viewing
                 blob: file, // Store File for DB
                 quota1: 0,
@@ -327,6 +358,35 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Reset Styles
         dom.displayCurrent.classList.remove('success');
+
+        // Update Active Stat in Grid
+        updateActiveStat(index);
+    }
+    
+    function renderStatsList() {
+        const grid = document.getElementById('stats-grid');
+        if(!grid) return;
+        
+        grid.innerHTML = ''; // Clear
+        
+        STAT_NAMES.forEach((name, index) => {
+            const div = document.createElement('div');
+            div.className = 'stat-item';
+            div.innerText = name;
+            div.dataset.index = index;
+            grid.appendChild(div);
+        });
+    }
+
+    function updateActiveStat(activeIndex) {
+        const items = document.querySelectorAll('.stat-item');
+        items.forEach(item => {
+            item.classList.remove('active');
+            // Assuming 1:1 mapping between slides and these stats
+            if(parseInt(item.dataset.index) === activeIndex) {
+                 item.classList.add('active');
+            }
+        });
     }
 
     function nextSlide() {
@@ -391,7 +451,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function updateTotalScore(newPointsForSlide) {
         // Calculate total from all slides
         totalScore = slidesData.reduce((acc, slide) => acc + (slide.points || 0), 0);
-        dom.scoreDisplay.innerText = totalScore;
+        if(dom.mainScoreDisplay) dom.mainScoreDisplay.innerText = totalScore;
     }
 
     function triggerCelebration(points, previousPoints) {
@@ -462,7 +522,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function assignPoints(points) {
         totalScore += points;
-        dom.scoreDisplay.innerText = totalScore;
+        if(dom.mainScoreDisplay) dom.mainScoreDisplay.innerText = totalScore;
         closeModal();
     }
 
