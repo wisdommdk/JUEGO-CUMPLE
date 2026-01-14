@@ -35,85 +35,138 @@ document.addEventListener('DOMContentLoaded', () => {
     // Initialize - Now waits for user
     initSetup();
 
-    // --- PERSISTENCE (LocalStorage Strategy) ---
-    // Browsers block direct file writing, so we use LocalStorage to save "Metadata" (scores, quotas)
-    // and match it with filenames when the user re-uploads images.
+    // --- PERSISTENCE (IndexedDB) ---
+    // Using IndexedDB to store blobs (images) + metadata
+    const DB_NAME = 'PresentationDB';
+    const DB_VERSION = 2; // Incremented version
+    let db;
 
-    function saveProgressLocked() {
-        if(!slidesData || slidesData.length === 0) return;
-        
-        // Map data to a JSON structure: Filename -> Data
-        const metadata = slidesData.map(s => ({
-            fileName: s.blob ? s.blob.name : (s.title + '.jpg'), // Try to key by filename
-            quota1: s.quota1,
-            quota3: s.quota3,
-            current: s.current,
-            points: s.points
-        }));
-
-        localStorage.setItem('presentation_data', JSON.stringify(metadata));
+    function openDB() {
+        return new Promise((resolve, reject) => {
+            const request = indexedDB.open(DB_NAME, DB_VERSION);
+            request.onerror = (e) => reject("Error opening DB");
+            request.onsuccess = (e) => {
+                db = e.target.result;
+                resolve(db);
+            };
+            request.onupgradeneeded = (e) => {
+                const db = e.target.result;
+                if (db.objectStoreNames.contains('slides')) {
+                    db.deleteObjectStore('slides'); // Re-create on schema update
+                }
+                db.createObjectStore('slides', { keyPath: 'id' });
+            };
+        });
     }
 
-    function loadProgressLocked(files) {
-        const storedJson = localStorage.getItem('presentation_data');
-        if (!storedJson) return null;
+    async function checkSavedSession() {
+        if (!db) await openDB();
+        return new Promise((resolve) => {
+            const tx = db.transaction('slides', 'readonly');
+            const store = tx.objectStore('slides');
+            const request = store.getAll();
+            request.onsuccess = () => {
+                const savedSlides = request.result;
+                if (savedSlides && savedSlides.length > 0) {
+                    // Restore slides (Blob is stored in DB)
+                    slidesData = savedSlides.map(s => ({
+                        ...s,
+                        image: URL.createObjectURL(s.blob) // Create valid URL from stored Blob
+                    }));
+                    
+                    // Recalculate Total Score
+                    updateTotalScore();
 
-        const metadata = JSON.parse(storedJson);
-        const restoredData = [];
-           
-        // Match uploaded files with stored metadata
-        files.forEach((file, index) => {
-            const foundData = metadata.find(m => m.fileName === file.name);
-            restoredData.push({
-                id: index + 1,
-                title: '', // Filename removed by request
-                image: URL.createObjectURL(file), 
-                blob: file, 
-                quota1: foundData ? foundData.quota1 : 0,
-                quota3: foundData ? foundData.quota3 : 0,
-                current: foundData ? foundData.current : 0,
-                points: foundData ? foundData.points : 0
+                    // Restore basics and start
+                    appConfig = { soundEffect: "assets/sounds/fanfare.mp3" };
+                    dom.audioPlayer.src = appConfig.soundEffect;
+                    dom.setupScreen.classList.add('hidden');
+                    loadSlide(0);
+                    resolve(true);
+                } else {
+                    resolve(false);
+                }
+            };
+            request.onerror = () => resolve(false);
+        });
+    }
+
+    async function saveAllSlidesToDB(slides) {
+        if (!db) await openDB();
+        
+        return new Promise((resolve, reject) => {
+            const tx = db.transaction('slides', 'readwrite');
+            const store = tx.objectStore('slides');
+            
+            // Transaction flow
+            tx.oncomplete = () => {
+                console.log("Persistence: All slides saved successfully.");
+                resolve();
+            };
+            tx.onerror = (e) => {
+                console.error("Persistence Error:", e);
+                reject(e);
+            };
+
+            // Operations
+            store.clear(); 
+
+            slides.forEach(slide => {
+                const slideToStore = { 
+                    id: slide.id,
+                    title: slide.title,
+                    blob: slide.blob, // File object is serializable in IDB
+                    quota1: slide.quota1,
+                    quota3: slide.quota3,
+                    current: slide.current,
+                    points: slide.points
+                };
+                store.put(slideToStore);
             });
         });
-        return restoredData;
+    }
+
+    async function updateSlideInDB(slide) {
+        if(!db) await openDB();
+        // Fire and forget, but log error
+        const tx = db.transaction('slides', 'readwrite');
+        const store = tx.objectStore('slides');
+        const slideToStore = { 
+            id: slide.id,
+            title: slide.title,
+            blob: slide.blob,
+            quota1: slide.quota1,
+            quota3: slide.quota3,
+            current: slide.current,
+            points: slide.points
+        };
+        store.put(slideToStore);
     }
     
     // Clear data
-    function clearProgress() {
-        if(confirm("¿Borrar todos los datos guardados?")) {
-            localStorage.removeItem('presentation_data');
-            alert("Datos borrados. Inicia una nueva sesión.");
-            location.reload();
+    async function clearProgress() {
+        if(confirm("¿Borrar todos los datos guardados y las imágenes?")) {
+            if (!db) await openDB();
+            const tx = db.transaction('slides', 'readwrite');
+            tx.objectStore('slides').clear();
+            tx.oncomplete = () => {
+                alert("Datos borrados. Inicia una nueva sesión.");
+                location.reload();
+            };
         }
     }
 
     function initSetup() {
         setupEventListeners();
-        // Check if we have data to warn the user
-        if(localStorage.getItem('presentation_data')) {
-            dom.fileList.innerText = "¡Datos de sesión anterior detectados!\nSelecciona las mismas imágenes para continuar.";
-            dom.fileInput.parentElement.classList.add('highlight-restore');
-        }
+        // Check for total session restore (images included)
+        checkSavedSession();
     }
 
     // --- SETUP LOGIC ---
     function handleFileSelect(e) {
         if (e.target.files && e.target.files.length > 0) {
             tempFiles = Array.from(e.target.files);
-            
-            // Check if we can restore
-            const potentialRestore = loadProgressLocked(tempFiles);
-            // Count how many matched (had points > 0 or quotas > 0)
-            const matched = potentialRestore ? potentialRestore.filter(r => r.points > 0 || r.quota1 > 0).length : 0;
-
-            let msg = `${tempFiles.length} archivos seleccionados.`;
-            if (matched > 0) {
-                msg += `\n✅ Se recuperaron datos para ${matched} archivo(s).`;
-            } else if (localStorage.getItem('presentation_data')) {
-                 msg += `\n⚠️ No coinciden con los datos guardados (nombres diferentes).`;
-            }
-
-            dom.fileList.innerText = msg;
+            dom.fileList.innerText = `${tempFiles.length} archivos seleccionados.`;
             dom.btnStartCustom.disabled = false;
         } else {
             dom.fileList.innerText = "Ningún archivo seleccionado";
@@ -121,38 +174,37 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    function startCustomPresentation() {
+    async function startCustomPresentation() {
         if (tempFiles.length === 0) return;
+        
+        // Show loading state
+        dom.btnStartCustom.innerText = "Guardando...";
+        dom.btnStartCustom.disabled = true;
 
         const customTitle = dom.configTitle.value.trim();
         
-        // Try to load merged data first
-        const restoredSlides = loadProgressLocked(tempFiles);
-
-        if (restoredSlides) {
-            slidesData = restoredSlides;
-            // Apply custom title if provided, otherwise keys remain empty
-            if (customTitle) {
-                slidesData.forEach((s, i) => s.title = `${customTitle} - ${i + 1}`);
-            }
-        } else {
-            // New Session
-            slidesData = tempFiles.map((file, index) => {
-                return {
-                    id: index + 1,
-                    title: customTitle ? `${customTitle} - ${index + 1}` : '', 
-                    image: URL.createObjectURL(file), // Create blob URL
-                    blob: file, 
-                    quota1: 0,
-                    quota3: 0,
-                    current: 0,
-                    points: 0
-                };
-            });
-        }
+        // New Session with FRESH files
+        slidesData = tempFiles.map((file, index) => {
+            return {
+                id: index + 1,
+                title: customTitle ? `${customTitle} - ${index + 1}` : '', 
+                image: URL.createObjectURL(file), // Create blob URL for viewing
+                blob: file, // Store File for DB
+                quota1: 0,
+                quota3: 0,
+                current: 0,
+                points: 0
+            };
+        });
         
-        // Initial Save (just in case)
-        saveProgressLocked();
+        // Initial Full Save (Images + Data)
+        // We await this to ensure data is safe before starting
+        try {
+            await saveAllSlidesToDB(slidesData);
+        } catch (err) {
+            console.error("Critical: Failed to save session.", err);
+            alert("Advertencia: No se pudo guardar la sesión automáticamente. Si recargas la página, perderás el progreso.");
+        }
 
         // Use default config for app settings if needed
         appConfig = { soundEffect: "assets/sounds/fanfare.mp3" };
@@ -260,8 +312,8 @@ document.addEventListener('DOMContentLoaded', () => {
             slidesData[currentSlideIndex].current = current;
             slidesData[currentSlideIndex].points = points;
             
-            // Save updates to LocalStorage
-            saveProgressLocked();
+            // Save updates to DB
+            updateSlideInDB(slidesData[currentSlideIndex]).catch(e => console.error("Error saving to DB", e));
         }
 
         dom.displayQuota1.innerText = quota1;
@@ -302,9 +354,13 @@ document.addEventListener('DOMContentLoaded', () => {
         if (points === 3) {
             banner.innerText = "¡META SUPERADA!\n+3 PUNTOS";
             banner.style.color = "var(--gold)";
+            // Ensure DB is synced after points assignment
+            updateSlideInDB(slidesData[currentSlideIndex]);
         } else {
             banner.innerText = "¡META CUMPLIDA!\n+1 PUNTO";
             banner.style.color = "#fff";
+            // Ensure DB is synced after points assignment
+            updateSlideInDB(slidesData[currentSlideIndex]);
         }
         
         banner.classList.remove('hidden');
