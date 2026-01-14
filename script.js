@@ -98,6 +98,9 @@ document.addEventListener('DOMContentLoaded', () => {
                         image: URL.createObjectURL(s.blob)
                     }));
                     
+                    // Recalculate Total Score
+                    updateTotalScore();
+
                     // Restore basics and start
                     appConfig = { soundEffect: "assets/sounds/fanfare.mp3" };
                     dom.audioPlayer.src = appConfig.soundEffect;
@@ -142,12 +145,24 @@ document.addEventListener('DOMContentLoaded', () => {
                 title: customTitle ? `${customTitle} - ${index + 1}` : '', // Use filename as title if no custom title
                 image: URL.createObjectURL(file), // Create blob URL
                 blob: file, // Store the file object for persistence
-                defaultQuota: 0,
-                defaultCurrent: 0
+                quota1: 0,
+                quota3: 0,
+                current: 0,
+                points: 0
             };
         });
 
         // Save to DB
+        saveAllSlidesToDB(slidesData).catch(e => console.error("DB Save Fail", e));
+
+        // Use default config for app settings if needed
+        appConfig = { soundEffect: "assets/sounds/fanfare.mp3" };
+        dom.audioPlayer.src = appConfig.soundEffect;
+
+        // Hide setup, show pres
+        dom.setupScreen.classList.add('hidden');
+        loadSlide(0);
+    }
         saveAllSlidesToDB(slidesData);
 
         // Use default config for app settings if needed
@@ -203,12 +218,12 @@ document.addEventListener('DOMContentLoaded', () => {
         // Reset display values
         dom.displayQuota1.innerText = slide.quota1 || 0;
         dom.displayQuota3.innerText = slide.quota3 || 0;
-        dom.displayCurrent.innerText = slide.defaultCurrent || 0;
+        dom.displayCurrent.innerText = slide.current || 0;
         
-        // Populate inputs with defaults
+        // Populate inputs with current values
         dom.inputQuota1.value = slide.quota1 || 0;
         dom.inputQuota3.value = slide.quota3 || 0;
-        dom.inputCurrent.value = slide.defaultCurrent || 0;
+        dom.inputCurrent.value = slide.current || 0;
         
         // Update Indicator
         dom.indicator.innerText = `${index + 1} / ${slidesData.length}`;
@@ -235,12 +250,25 @@ document.addEventListener('DOMContentLoaded', () => {
         const quota3 = parseFloat(dom.inputQuota3.value) || 0;
         const current = parseFloat(dom.inputCurrent.value) || 0;
 
+        // Determine points for THIS slide
+        let points = 0;
+        if (current >= quota3 && quota3 > 0) {
+            points = 3;
+        } else if (current >= quota1 && quota1 > 0) {
+            points = 1;
+        }
+
+        // Get previous points
+        const previousPoints = slidesData[currentSlideIndex].points || 0;
+
         // Update Data Model
         if (slidesData[currentSlideIndex]) {
             slidesData[currentSlideIndex].quota1 = quota1;
             slidesData[currentSlideIndex].quota3 = quota3;
             slidesData[currentSlideIndex].current = current;
-            // Save updates to DB
+            slidesData[currentSlideIndex].points = points;
+            
+            // Save updates to DB (Quotas, Current, AND Points)
             updateSlideInDB(slidesData[currentSlideIndex]).catch(e => console.error("Error saving to DB", e));
         }
 
@@ -251,25 +279,29 @@ document.addEventListener('DOMContentLoaded', () => {
         // Animation logic
         animateValue(dom.displayCurrent, 0, current, 1000);
 
-        // Determine points
-        let points = 0;
-        if (current >= quota3 && quota3 > 0) {
-            points = 3;
-        } else if (current >= quota1 && quota1 > 0) {
-            points = 1;
-        }
-
-        if (points > 0) {
-            setTimeout(() => {
-                triggerCelebration(points);
-            }, 1000); // Wait for number count up
+        // Check if points changed for this slide
+        if (points > previousPoints) {
+             // Only celebrate if we improved the score
+             setTimeout(() => {
+                triggerCelebration(points, previousPoints);
+            }, 1000);
+        } else {
+            // Just update total score if no celebration needed
+             updateTotalScore();
         }
     }
 
-    function triggerCelebration(points) {
-        // Visuals
-        dom.displayCurrent.classList.add('success');
-        document.body.classList.add('party-mode'); // Disco background
+    function updateTotalScore(newPointsForSlide) {
+        // Calculate total from all slides
+        totalScore = slidesData.reduce((acc, slide) => acc + (slide.points || 0), 0);
+        dom.scoreDisplay.innerText = totalScore;
+    }
+
+    function triggerCelebration(points, previousPoints) {
+        // Update Score using the diff so we show the new total correctly or just recalc
+        updateTotalScore();
+
+        // Points already added via updateTotalScore called before); // Disco background
         dom.container.classList.add('shake-active'); // Shake container
         
         // Show Big Banner
@@ -286,9 +318,7 @@ document.addEventListener('DOMContentLoaded', () => {
         banner.classList.remove('hidden');
         banner.classList.add('visible');
 
-        // Add Points
-        totalScore += points;
-        dom.scoreDisplay.innerText = totalScore;
+        // Points already updated via updateTotalScore
         
         // Confetti - INTENSE
         const duration = 5000;
