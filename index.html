@@ -13,14 +13,18 @@
     <!-- Main Presentation Area -->
     <div id="presentation-container">
         <div class="overlay"></div>
-        <div id="celebration-banner" class="celebration-banner hidden">¡META SUPERADA!</div>
+        <div id="celebration-banner" class="celebration-banner hidden">¡CUOTA LOGRADA!</div>
         <div class="content-wrapper">
             <h1 id="slide-title" class="slide-title">Esperando Configuración...</h1>
             
             <div class="stats-container">
                 <div class="stat-box">
-                    <span class="stat-label">Cuota</span>
-                    <div id="display-quota" class="stat-value">0</div>
+                    <span class="stat-label">Meta (1 Pt)</span>
+                    <div id="display-quota-1" class="stat-value">0</div>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-label">Super Meta (3 Pts)</span>
+                    <div id="display-quota-3" class="stat-value">0</div>
                 </div>
                 <div class="stat-box">
                     <span class="stat-label">Actual</span>
@@ -39,7 +43,7 @@
             
             <div class="upload-section">
                 <h3>1. Cargar Imágenes</h3>
-                <p>Selecciona las imágenes que deseas mostrar en secuencia.</p>
+                <p>Selecciona las gráficas que deseas mostrar en secuencia.</p>
                 <label for="file-upload" class="custom-file-upload">
                     📂 Seleccionar Imágenes (PNG, JPG)
                 </label>
@@ -61,14 +65,18 @@
         </div>
     </div>
 
-    <!-- Operator Control Panel (Bottom Bar) -->
-    <div id="control-panel">
-        <div class="controls-left">
-            <div class="input-group">
-                <label>Meta (Cuota)</label>
-                <input type="number" id="input-quota">
+    <!-- Operator Control Pa1 Pt</label>
+                <input type="number" id="input-quota-1" style="width: 80px;">
             </div>
             <div class="input-group">
+                <label>Meta 3 Pts</label>
+                <input type="number" id="input-quota-3" style="width: 80px;">
+            </div>
+            <div class="input-group">
+                <label>Actual</label>
+                <input type="number" id="input-current" style="width: 80px;">
+            </div>
+            <button id="btn-validate" class="btn btn-success">Valid
                 <label>Actual (Logrado)</label>
                 <input type="number" id="input-current">
             </div>
@@ -83,18 +91,9 @@
             <button id="btn-restart" class="btn btn-outline" style="margin-right: 1rem;">⚙️ Config</button>
             <button id="btn-prev" class="btn btn-outline">&larr; Anterior</button>
             <span id="slide-indicator" style="color: #94a3b8; font-size: 0.8rem;">1 / 1</span>
-            <button id="btn-next" class="btn btn-primary">Siguiente &rarr;</button>
-        </div>
-    </div>
-
-    <!-- Points Selection Modal -->
-    <div id="points-modal" class="points-overlay">
-        <h2 class="points-title">¡Meta Cumplida! Asignar Puntos:</h2>
-        <div class="points-buttons">
-            <button class="point-btn" data-points="1">1</button>
-            <button class="point-btn" data-points="2">2</button>
-            <button class="point-btn" data-points="3">3</button>
-        </div>
+            <button id="btn-next" REMOVED -->
+    <!-- Audio Element for Fanfare -->
+    <audio id="audio-fanfare" hidden></audio/div>
         <button id="btn-skip-points" class="btn btn-outline" style="margin-top: 2rem;">Cancelar / Cerrar</button>
         <!-- Audio Element for Fanfare -->
         <audio id="audio-fanfare" hidden></audio>

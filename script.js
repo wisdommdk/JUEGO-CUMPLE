@@ -10,18 +10,17 @@ document.addEventListener('DOMContentLoaded', () => {
     const dom = {
         container: document.getElementById('presentation-container'),
         title: document.getElementById('slide-title'),
-        displayQuota: document.getElementById('display-quota'),
+        displayQuota1: document.getElementById('display-quota-1'),
+        displayQuota3: document.getElementById('display-quota-3'),
         displayCurrent: document.getElementById('display-current'),
-        inputQuota: document.getElementById('input-quota'),
+        inputQuota1: document.getElementById('input-quota-1'),
+        inputQuota3: document.getElementById('input-quota-3'),
         inputCurrent: document.getElementById('input-current'),
         btnValidate: document.getElementById('btn-validate'),
         btnPrev: document.getElementById('btn-prev'),
         btnNext: document.getElementById('btn-next'),
         indicator: document.getElementById('slide-indicator'),
         scoreDisplay: document.getElementById('total-score'),
-        pointsModal: document.getElementById('points-modal'),
-        pointBtns: document.querySelectorAll('.point-btn'),
-        btnSkipPoints: document.getElementById('btn-skip-points'),
         audioPlayer: document.getElementById('audio-fanfare'),
         // Setup Screen Elements
         setupScreen: document.getElementById('setup-screen'),
@@ -202,11 +201,13 @@ document.addEventListener('DOMContentLoaded', () => {
         dom.container.style.backgroundImage = `url('${slide.image}')`;
         
         // Reset display values
-        dom.displayQuota.innerText = slide.defaultQuota || 0;
+        dom.displayQuota1.innerText = slide.quota1 || 0;
+        dom.displayQuota3.innerText = slide.quota3 || 0;
         dom.displayCurrent.innerText = slide.defaultCurrent || 0;
         
         // Populate inputs with defaults
-        dom.inputQuota.value = slide.defaultQuota || 0;
+        dom.inputQuota1.value = slide.quota1 || 0;
+        dom.inputQuota3.value = slide.quota3 || 0;
         dom.inputCurrent.value = slide.defaultCurrent || 0;
         
         // Update Indicator
@@ -230,31 +231,42 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function validateResult() {
         // Sync inputs to display
-        const quota = parseFloat(dom.inputQuota.value) || 0;
+        const quota1 = parseFloat(dom.inputQuota1.value) || 0;
+        const quota3 = parseFloat(dom.inputQuota3.value) || 0;
         const current = parseFloat(dom.inputCurrent.value) || 0;
 
         // Update Data Model
         if (slidesData[currentSlideIndex]) {
-            slidesData[currentSlideIndex].defaultQuota = quota;
-            slidesData[currentSlideIndex].defaultCurrent = current;
+            slidesData[currentSlideIndex].quota1 = quota1;
+            slidesData[currentSlideIndex].quota3 = quota3;
+            slidesData[currentSlideIndex].current = current;
             // Save updates to DB
             updateSlideInDB(slidesData[currentSlideIndex]).catch(e => console.error("Error saving to DB", e));
         }
 
-        dom.displayQuota.innerText = quota;
+        dom.displayQuota1.innerText = quota1;
+        dom.displayQuota3.innerText = quota3;
         dom.displayCurrent.innerText = current;
 
         // Animation logic
         animateValue(dom.displayCurrent, 0, current, 1000);
 
-        if (current >= quota) {
+        // Determine points
+        let points = 0;
+        if (current >= quota3 && quota3 > 0) {
+            points = 3;
+        } else if (current >= quota1 && quota1 > 0) {
+            points = 1;
+        }
+
+        if (points > 0) {
             setTimeout(() => {
-                triggerCelebration();
+                triggerCelebration(points);
             }, 1000); // Wait for number count up
         }
     }
 
-    function triggerCelebration() {
+    function triggerCelebration(points) {
         // Visuals
         dom.displayCurrent.classList.add('success');
         document.body.classList.add('party-mode'); // Disco background
@@ -262,9 +274,21 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // Show Big Banner
         const banner = document.getElementById('celebration-banner');
+        
+        if (points === 3) {
+            banner.innerText = "¡META SUPERADA!\n+3 PUNTOS";
+            banner.style.color = "var(--gold)";
+        } else {
+            banner.innerText = "¡META CUMPLIDA!\n+1 PUNTO";
+            banner.style.color = "#fff";
+        }
+        
         banner.classList.remove('hidden');
         banner.classList.add('visible');
 
+        // Add Points
+        totalScore += points;
+        dom.scoreDisplay.innerText = totalScore;
         
         // Confetti - INTENSE
         const duration = 5000;
@@ -298,11 +322,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Sound
         playFanfare();
-
-        // Show Points Modal with delay
-        setTimeout(() => {
-            dom.pointsModal.classList.add('visible');
-        }, 3000); // Wait longer to enjoy the celebration
     }
 
     function playFanfare() {
