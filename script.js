@@ -41,7 +41,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- STAT NAMES CONFIG ---
     const STAT_NAMES = [
         "QSH", "FHS", "GI/GIWC", "GBS", "CASH", 
-        "ASSETRES VSD", "STP", "WDAH", "QTSM", "GIBY", 
+        "ASSETRES", "VSD", "STP", "WDAH", "QTSM", "GIBY", 
         "BIS/BISS", "NNCF", "NAMF", "NFSMC", "PCTRISFNC", "PDC"
     ];
 
@@ -374,6 +374,12 @@ document.addEventListener('DOMContentLoaded', () => {
             div.className = 'stat-item';
             div.innerText = name;
             div.dataset.index = index;
+            
+            // Add click interaction
+            div.addEventListener('click', () => {
+                loadSlide(index);
+            });
+
             grid.appendChild(div);
         });
     }

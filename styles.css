@@ -182,23 +182,23 @@ body {
 .stats-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 0.8rem;
+    gap: 1rem;
     /* Glassmorphism consistent with score container */
     background: rgba(15, 23, 42, 0.4); 
-    padding: 1.5rem;
+    padding: 2rem;
     border-radius: 1.5rem;
     border: 1px solid rgba(255,255,255,0.1);
     backdrop-filter: blur(12px);
     width: 100%;
     /* Wider to fit 3 cols but consistent */
-    width: 500px; 
+    width: 750px; 
     box-shadow: 0 10px 30px rgba(0,0,0,0.3);
 }
 
 .stat-item {
-    font-size: 1.2rem; /* Much larger and visible */
+    font-size: 1.4rem; /* Much larger and visible */
     color: rgba(255,255,255,0.6);
-    padding: 0.8rem;
+    padding: 1rem;
     text-align: center;
     border-radius: 0.5rem;
     font-weight: 800;
@@ -279,6 +279,9 @@ body {
     background: rgba(0, 0, 0, 0.3); /* Lighter overlay during party */
     animation: discoBg 2s infinite;
 }
+
+/* Transitions Classes */
+/* No special transitions */
 
 /* Animations */
 @keyframes neonFlux {
