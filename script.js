@@ -66,7 +66,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const foundData = metadata.find(m => m.fileName === file.name);
             restoredData.push({
                 id: index + 1,
-                title: file.name.split('.')[0], 
+                title: '', // Filename removed by request
                 image: URL.createObjectURL(file), 
                 blob: file, 
                 quota1: foundData ? foundData.quota1 : 0,
@@ -131,12 +131,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (restoredSlides) {
             slidesData = restoredSlides;
+            // Apply custom title if provided, otherwise keys remain empty
+            if (customTitle) {
+                slidesData.forEach((s, i) => s.title = `${customTitle} - ${i + 1}`);
+            }
         } else {
             // New Session
             slidesData = tempFiles.map((file, index) => {
                 return {
                     id: index + 1,
-                    title: customTitle ? `${customTitle} - ${index + 1}` : file.name.split('.')[0], 
+                    title: customTitle ? `${customTitle} - ${index + 1}` : '', 
                     image: URL.createObjectURL(file), // Create blob URL
                     blob: file, 
                     quota1: 0,
