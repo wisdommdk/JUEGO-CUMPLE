@@ -21,10 +21,6 @@ document.addEventListener('DOMContentLoaded', () => {
         btnNext: document.getElementById('btn-next'),
         indicator: document.getElementById('slide-indicator'),
         mainScoreDisplay: document.getElementById('display-total-score-main'),
-        // Extra Points Display Elements
-        displayPrevPoints: document.getElementById('display-prev-points'),
-        displayBogotaPoints: document.getElementById('display-bogota-points'),
-        
         audioPlayer: document.getElementById('audio-fanfare'),
         // Setup Screen Elements
         setupScreen: document.getElementById('setup-screen'),
@@ -123,7 +119,6 @@ document.addEventListener('DOMContentLoaded', () => {
                             
                             // Recalculate Total Score
                             updateTotalScore();
-                            updateExtraPointsDisplay();
 
                             // Restore basics and start
                             appConfig = { soundEffect: "assets/sounds/Fans%20Cheering.mp3" };
@@ -315,7 +310,6 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // Calc initial score
         updateTotalScore();
-        updateExtraPointsDisplay();
 
         // Hide setup, show pres
         dom.setupScreen.classList.add('hidden');
@@ -553,20 +547,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Sound
         playFanfare();
-    }
-
-    function updateTotalScore() {
-        // Calculate total points from all slides
-        const sum = slidesData.reduce((acc, slide) => acc + (slide.points || 0), 0);
-        totalScore = sum;
-        if(dom.mainScoreDisplay) dom.mainScoreDisplay.innerText = totalScore;
-    }
-
-    function updateExtraPointsDisplay() {
-        const prev = localStorage.getItem('pres_prevPoints') || '0';
-        const bogota = localStorage.getItem('pres_bogotaPoints') || '0';
-        if(dom.displayPrevPoints) dom.displayPrevPoints.innerText = prev;
-        if(dom.displayBogotaPoints) dom.displayBogotaPoints.innerText = bogota;
     }
 
     function playFanfare() {
