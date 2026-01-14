@@ -36,9 +36,87 @@ document.addEventListener('DOMContentLoaded', () => {
     // Initialize - Now waits for user
     initSetup();
 
+    // --- PERSISTENCE (IndexedDB) ---
+    const DB_NAME = 'PresentationDB';
+    const DB_VERSION = 1;
+    let db;
+
+    function openDB() {
+        return new Promise((resolve, reject) => {
+            const request = indexedDB.open(DB_NAME, DB_VERSION);
+            request.onerror = (e) => reject("Error opening DB");
+            request.onsuccess = (e) => {
+                db = e.target.result;
+                resolve(db);
+            };
+            request.onupgradeneeded = (e) => {
+                const db = e.target.result;
+                if (!db.objectStoreNames.contains('slides')) {
+                    db.createObjectStore('slides', { keyPath: 'id' });
+                }
+            };
+        });
+    }
+
+    async function saveAllSlidesToDB(slides) {
+        if (!db) await openDB();
+        const tx = db.transaction('slides', 'readwrite');
+        const store = tx.objectStore('slides');
+        
+        // Clear previous data as we are starting fresh
+        store.clear();
+
+        slides.forEach(slide => {
+            // Clone to avoid modifying the runtime object
+            const slideToStore = { ...slide };
+            // Remove the runtime ObjectURL (string), keep the blob/file
+            delete slideToStore.image; 
+            store.put(slideToStore);
+        });
+    }
+
+    async function updateSlideInDB(slide) {
+        if(!db) await openDB();
+        const tx = db.transaction('slides', 'readwrite');
+        const store = tx.objectStore('slides');
+        const slideToStore = { ...slide };
+        delete slideToStore.image;
+        store.put(slideToStore);
+    }
+
+    async function checkSavedSession() {
+        if (!db) await openDB();
+        return new Promise((resolve) => {
+            const tx = db.transaction('slides', 'readonly');
+            const store = tx.objectStore('slides');
+            const request = store.getAll();
+            request.onsuccess = () => {
+                const savedSlides = request.result;
+                if (savedSlides && savedSlides.length > 0) {
+                    // Restore slides
+                    slidesData = savedSlides.map(s => ({
+                        ...s,
+                        image: URL.createObjectURL(s.blob)
+                    }));
+                    
+                    // Restore basics and start
+                    appConfig = { soundEffect: "assets/sounds/fanfare.mp3" };
+                    dom.audioPlayer.src = appConfig.soundEffect;
+                    dom.setupScreen.classList.add('hidden');
+                    loadSlide(0);
+                    resolve(true);
+                } else {
+                    resolve(false);
+                }
+            };
+            request.onerror = () => resolve(false);
+        });
+    }
+
     function initSetup() {
         setupEventListeners();
-        // Setup screen is visible by default via CSS/HTML structure
+        // Check for previous session
+        checkSavedSession();
     }
 
     // --- SETUP LOGIC ---
@@ -64,10 +142,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 id: index + 1,
                 title: customTitle ? `${customTitle} - ${index + 1}` : '', // Use filename as title if no custom title
                 image: URL.createObjectURL(file), // Create blob URL
+                blob: file, // Store the file object for persistence
                 defaultQuota: 0,
                 defaultCurrent: 0
             };
         });
+
+        // Save to DB
+        saveAllSlidesToDB(slidesData);
 
         // Use default config for app settings if needed
         appConfig = { soundEffect: "assets/sounds/fanfare.mp3" };
@@ -148,8 +230,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function validateResult() {
         // Sync inputs to display
-        const quota = parseFloat(dom.inputQuota.value);
-        const current = parseFloat(dom.inputCurrent.value);
+        const quota = parseFloat(dom.inputQuota.value) || 0;
+        const current = parseFloat(dom.inputCurrent.value) || 0;
+
+        // Update Data Model
+        if (slidesData[currentSlideIndex]) {
+            slidesData[currentSlideIndex].defaultQuota = quota;
+            slidesData[currentSlideIndex].defaultCurrent = current;
+            // Save updates to DB
+            updateSlideInDB(slidesData[currentSlideIndex]).catch(e => console.error("Error saving to DB", e));
+        }
 
         dom.displayQuota.innerText = quota;
         dom.displayCurrent.innerText = current;
@@ -236,7 +326,16 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!startTimestamp) startTimestamp = timestamp;
             const progress = Math.min((timestamp - startTimestamp) / duration, 1);
             obj.innerHTML = Math.floor(progress * (end - start) + start);
-            if (progress < 1) {
+            if (progress < 1) {() => {
+             // Clear DB on restart
+             if(confirm("¿Seguro? Se borrarán los datos guardados.")) {
+                if(db) {
+                     const tx = db.transaction('slides', 'readwrite');
+                     tx.objectStore('slides').clear();
+                }
+                showSetup();
+             }
+        }
                 window.requestAnimationFrame(step);
             }
         };

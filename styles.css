@@ -75,8 +75,10 @@ body {
 
 .stats-container {
     display: flex;
+    flex-direction: column;
     justify-content: flex-start;
-    gap: 4rem;
+    align-items: flex-start;
+    gap: 2rem;
     margin-bottom: 2rem;
 }
 
