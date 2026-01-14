@@ -21,13 +21,17 @@ document.addEventListener('DOMContentLoaded', () => {
         btnNext: document.getElementById('btn-next'),
         indicator: document.getElementById('slide-indicator'),
         mainScoreDisplay: document.getElementById('display-total-score-main'),
+        displayDelValle: document.getElementById('display-del-valle'),
+        displayBogota: document.getElementById('display-bogota'),
+        displayDiffRow: document.getElementById('diff-row'),
+        displayDiffValue: document.getElementById('display-diff-value'),
         audioPlayer: document.getElementById('audio-fanfare'),
         // Setup Screen Elements
         setupScreen: document.getElementById('setup-screen'),
         fileInput: document.getElementById('file-upload'),
         fileList: document.getElementById('file-list'),
         configTitle: document.getElementById('config-title'),
-        configPrevPoints: document.getElementById('config-prev-points'),
+        configDelVallePoints: document.getElementById('config-del-valle-points'),
         configBogotaPoints: document.getElementById('config-bogota-points'),
         btnStartCustom: document.getElementById('btn-start-custom'),
         btnRestart: document.getElementById('btn-restart')
@@ -45,6 +49,29 @@ document.addEventListener('DOMContentLoaded', () => {
         "ASSETRES", "VSD", "STP", "WDAH", "QTSM", "GIBY", 
         "BIS/BISS", "NNCF", "NAMF", "NFSMC", "PCTRISFNC", "PDC"
     ];
+
+    // Helper to update comparative scores and difference
+    function updateComparativeDisplay(delValle, bogota) {
+        dom.displayDelValle.innerText = delValle;
+        dom.displayBogota.innerText = bogota;
+        
+        const dvVal = parseInt(delValle) || 0;
+        const bogVal = parseInt(bogota) || 0;
+        const diff = bogVal - dvVal; // Bog - DV
+        
+        dom.displayDiffValue.innerText = (diff > 0 ? "+" : "") + diff;
+        dom.displayDiffRow.style.display = 'flex'; // Show it
+        
+        // Colors: Positive (Red/Danger), Negative (Green/Success)
+        // If 0, maybe white?
+        if (diff > 0) {
+            dom.displayDiffValue.style.color = "var(--danger)";
+        } else if (diff < 0) {
+            dom.displayDiffValue.style.color = "var(--success)";
+        } else {
+            dom.displayDiffValue.style.color = "#fff";
+        }
+    }
 
     // Initialize - Now waits for user
     initSetup();
@@ -119,6 +146,11 @@ document.addEventListener('DOMContentLoaded', () => {
                             
                             // Recalculate Total Score
                             updateTotalScore();
+
+                            // Restore Extra Scores
+                            const savedDV = localStorage.getItem('pres_delVallePoints') || "0";
+                            const savedBog = localStorage.getItem('pres_bogotaPoints') || "0";
+                            updateComparativeDisplay(savedDV, savedBog);
 
                             // Restore basics and start
                             appConfig = { soundEffect: "assets/sounds/Fans%20Cheering.mp3" };
@@ -222,7 +254,7 @@ document.addEventListener('DOMContentLoaded', () => {
         setupEventListeners();
         
         // Restore config inputs if available
-        if(dom.configPrevPoints) dom.configPrevPoints.value = localStorage.getItem('pres_prevPoints') || '';
+        if(dom.configDelVallePoints) dom.configDelVallePoints.value = localStorage.getItem('pres_delVallePoints') || '';
         if(dom.configBogotaPoints) dom.configBogotaPoints.value = localStorage.getItem('pres_bogotaPoints') || '';
         
         // Check for total session restore (images included)
@@ -251,13 +283,15 @@ document.addEventListener('DOMContentLoaded', () => {
         const customTitleInput = dom.configTitle.value.trim();
         
         // Capture extra config
-        const prevPoints = dom.configPrevPoints.value.trim();
-        const bogotaPoints = dom.configBogotaPoints.value.trim();
+        const delVallePoints = dom.configDelVallePoints.value.trim() || "0";
+        const bogotaPoints = dom.configBogotaPoints.value.trim() || "0";
         
-        // Persist extra config simply in localStorage for now since DB schema is slides-only
-        // Or we could attach it to appConfig and maybe save that somewhere, but currently appConfig is transient
-        localStorage.setItem('pres_prevPoints', prevPoints);
+        // Persist extra config simply in localStorage for now
+        localStorage.setItem('pres_delVallePoints', delVallePoints);
         localStorage.setItem('pres_bogotaPoints', bogotaPoints);
+
+        // Update displays immediately
+        updateComparativeDisplay(delVallePoints, bogotaPoints);
 
         // Sort files to ensure sequence matches mapping
         // Using numeric sort so Page_10 comes after Page_9, not Page_1

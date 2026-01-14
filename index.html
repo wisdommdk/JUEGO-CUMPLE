@@ -35,8 +35,32 @@
             <div id="right-sidebar">
                 <!-- Score Display -->
                 <div class="score-container">
-                    <span class="score-label">Cuántos Puntos llevamos</span>
+                    <span class="score-label">Puntos Fundación esta semana</span>
                     <div id="display-total-score-main" class="score-value">0</div>
+                    
+                    <!-- Comparative Scores -->
+                    <div class="extra-scores-container">
+                        <div class="extra-score-row">
+                            <div class="extra-row-left">
+                                <span class="extra-flag">🇲🇽</span>
+                                <span class="extra-label">Del Valle</span>
+                            </div>
+                            <span id="display-del-valle" class="extra-value">0</span>
+                        </div>
+                        <div class="extra-score-row">
+                            <div class="extra-row-left">
+                                <span class="extra-flag">🇨🇴</span>
+                                <span class="extra-label">Bogotá</span>
+                            </div>
+                            <span id="display-bogota" class="extra-value">0</span>
+                        </div>
+                        
+                        <!-- Difference Display -->
+                        <div id="diff-row" class="extra-score-row diff-row" style="display:none;">
+                            <span class="extra-label" style="font-size: 0.8rem;">Diferencia (Bog - DV):</span>
+                            <span id="display-diff-value" class="extra-value" style="font-size: 1.8rem;">0</span>
+                        </div>
+                    </div>
                 </div>
                 
                 <!-- Stats Grid List -->
@@ -71,8 +95,8 @@
                 
                 <div style="display: flex; gap: 10px; margin-top: 10px;">
                     <div style="flex: 1;">
-                        <label>Puntos semana anterior:</label>
-                        <input type="number" id="config-prev-points" class="config-input" placeholder="0">
+                        <label>Puntos Del Valle:</label>
+                        <input type="number" id="config-del-valle-points" class="config-input" placeholder="0">
                     </div>
                     <div style="flex: 1;">
                         <label>Puntos Bogotá:</label>
