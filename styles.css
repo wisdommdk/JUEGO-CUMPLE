@@ -75,11 +75,11 @@ body {
 
 .stats-container {
     display: flex;
-    flex-direction: column;
-    justify-content: flex-start;
-    align-items: flex-start;
-    gap: 2rem;
+    justify-content: center;
+    align-items: center;
+    gap: 4rem;
     margin-bottom: 2rem;
+    width: 100%;
 }
 
 .stat-box {
@@ -90,6 +90,11 @@ body {
     border: 1px solid rgba(255,255,255,0.2);
     min-width: 300px;
     transition: transform 0.3s, box-shadow 0.3s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
 }
 
 .stat-label {
