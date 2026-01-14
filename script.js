@@ -35,97 +35,85 @@ document.addEventListener('DOMContentLoaded', () => {
     // Initialize - Now waits for user
     initSetup();
 
-    // --- PERSISTENCE (IndexedDB) ---
-    const DB_NAME = 'PresentationDB';
-    const DB_VERSION = 1;
-    let db;
+    // --- PERSISTENCE (LocalStorage Strategy) ---
+    // Browsers block direct file writing, so we use LocalStorage to save "Metadata" (scores, quotas)
+    // and match it with filenames when the user re-uploads images.
 
-    function openDB() {
-        return new Promise((resolve, reject) => {
-            const request = indexedDB.open(DB_NAME, DB_VERSION);
-            request.onerror = (e) => reject("Error opening DB");
-            request.onsuccess = (e) => {
-                db = e.target.result;
-                resolve(db);
-            };
-            request.onupgradeneeded = (e) => {
-                const db = e.target.result;
-                if (!db.objectStoreNames.contains('slides')) {
-                    db.createObjectStore('slides', { keyPath: 'id' });
-                }
-            };
-        });
-    }
-
-    async function saveAllSlidesToDB(slides) {
-        if (!db) await openDB();
-        const tx = db.transaction('slides', 'readwrite');
-        const store = tx.objectStore('slides');
+    function saveProgressLocked() {
+        if(!slidesData || slidesData.length === 0) return;
         
-        // Clear previous data as we are starting fresh
-        store.clear();
+        // Map data to a JSON structure: Filename -> Data
+        const metadata = slidesData.map(s => ({
+            fileName: s.blob ? s.blob.name : (s.title + '.jpg'), // Try to key by filename
+            quota1: s.quota1,
+            quota3: s.quota3,
+            current: s.current,
+            points: s.points
+        }));
 
-        slides.forEach(slide => {
-            // Clone to avoid modifying the runtime object
-            const slideToStore = { ...slide };
-            // Remove the runtime ObjectURL (string), keep the blob/file
-            delete slideToStore.image; 
-            store.put(slideToStore);
-        });
+        localStorage.setItem('presentation_data', JSON.stringify(metadata));
     }
 
-    async function updateSlideInDB(slide) {
-        if(!db) await openDB();
-        const tx = db.transaction('slides', 'readwrite');
-        const store = tx.objectStore('slides');
-        const slideToStore = { ...slide };
-        delete slideToStore.image;
-        store.put(slideToStore);
-    }
+    function loadProgressLocked(files) {
+        const storedJson = localStorage.getItem('presentation_data');
+        if (!storedJson) return null;
 
-    async function checkSavedSession() {
-        if (!db) await openDB();
-        return new Promise((resolve) => {
-            const tx = db.transaction('slides', 'readonly');
-            const store = tx.objectStore('slides');
-            const request = store.getAll();
-            request.onsuccess = () => {
-                const savedSlides = request.result;
-                if (savedSlides && savedSlides.length > 0) {
-                    // Restore slides
-                    slidesData = savedSlides.map(s => ({
-                        ...s,
-                        image: URL.createObjectURL(s.blob)
-                    }));
-                    
-                    // Recalculate Total Score
-                    updateTotalScore();
-
-                    // Restore basics and start
-                    appConfig = { soundEffect: "assets/sounds/fanfare.mp3" };
-                    dom.audioPlayer.src = appConfig.soundEffect;
-                    dom.setupScreen.classList.add('hidden');
-                    loadSlide(0);
-                    resolve(true);
-                } else {
-                    resolve(false);
-                }
-            };
-            request.onerror = () => resolve(false);
+        const metadata = JSON.parse(storedJson);
+        const restoredData = [];
+           
+        // Match uploaded files with stored metadata
+        files.forEach((file, index) => {
+            const foundData = metadata.find(m => m.fileName === file.name);
+            restoredData.push({
+                id: index + 1,
+                title: file.name.split('.')[0], 
+                image: URL.createObjectURL(file), 
+                blob: file, 
+                quota1: foundData ? foundData.quota1 : 0,
+                quota3: foundData ? foundData.quota3 : 0,
+                current: foundData ? foundData.current : 0,
+                points: foundData ? foundData.points : 0
+            });
         });
+        return restoredData;
+    }
+    
+    // Clear data
+    function clearProgress() {
+        if(confirm("¿Borrar todos los datos guardados?")) {
+            localStorage.removeItem('presentation_data');
+            alert("Datos borrados. Inicia una nueva sesión.");
+            location.reload();
+        }
     }
 
     function initSetup() {
         setupEventListeners();
-        // Check for previous session
-        checkSavedSession();
+        // Check if we have data to warn the user
+        if(localStorage.getItem('presentation_data')) {
+            dom.fileList.innerText = "¡Datos de sesión anterior detectados!\nSelecciona las mismas imágenes para continuar.";
+            dom.fileInput.parentElement.classList.add('highlight-restore');
+        }
     }
 
     // --- SETUP LOGIC ---
     function handleFileSelect(e) {
         if (e.target.files && e.target.files.length > 0) {
             tempFiles = Array.from(e.target.files);
-            dom.fileList.innerText = `${tempFiles.length} archivos seleccionados:\n` + tempFiles.map(f => f.name).join(', ');
+            
+            // Check if we can restore
+            const potentialRestore = loadProgressLocked(tempFiles);
+            // Count how many matched (had points > 0 or quotas > 0)
+            const matched = potentialRestore ? potentialRestore.filter(r => r.points > 0 || r.quota1 > 0).length : 0;
+
+            let msg = `${tempFiles.length} archivos seleccionados.`;
+            if (matched > 0) {
+                msg += `\n✅ Se recuperaron datos para ${matched} archivo(s).`;
+            } else if (localStorage.getItem('presentation_data')) {
+                 msg += `\n⚠️ No coinciden con los datos guardados (nombres diferentes).`;
+            }
+
+            dom.fileList.innerText = msg;
             dom.btnStartCustom.disabled = false;
         } else {
             dom.fileList.innerText = "Ningún archivo seleccionado";
@@ -138,36 +126,36 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const customTitle = dom.configTitle.value.trim();
         
-        // Transform files to slides
-        slidesData = tempFiles.map((file, index) => {
-            return {
-                id: index + 1,
-                title: customTitle ? `${customTitle} - ${index + 1}` : '', // Use filename as title if no custom title
-                image: URL.createObjectURL(file), // Create blob URL
-                blob: file, // Store the file object for persistence
-                quota1: 0,
-                quota3: 0,
-                current: 0,
-                points: 0
-            };
-        });
+        // Try to load merged data first
+        const restoredSlides = loadProgressLocked(tempFiles);
 
-        // Save to DB
-        saveAllSlidesToDB(slidesData).catch(e => console.error("DB Save Fail", e));
-
-        // Use default config for app settings if needed
-        appConfig = { soundEffect: "assets/sounds/fanfare.mp3" };
-        dom.audioPlayer.src = appConfig.soundEffect;
-
-        // Hide setup, show pres
-        dom.setupScreen.classList.add('hidden');
-        loadSlide(0);
-    }
-        saveAllSlidesToDB(slidesData);
+        if (restoredSlides) {
+            slidesData = restoredSlides;
+        } else {
+            // New Session
+            slidesData = tempFiles.map((file, index) => {
+                return {
+                    id: index + 1,
+                    title: customTitle ? `${customTitle} - ${index + 1}` : file.name.split('.')[0], 
+                    image: URL.createObjectURL(file), // Create blob URL
+                    blob: file, 
+                    quota1: 0,
+                    quota3: 0,
+                    current: 0,
+                    points: 0
+                };
+            });
+        }
+        
+        // Initial Save (just in case)
+        saveProgressLocked();
 
         // Use default config for app settings if needed
         appConfig = { soundEffect: "assets/sounds/fanfare.mp3" };
         dom.audioPlayer.src = appConfig.soundEffect;
+        
+        // Calc initial score
+        updateTotalScore();
 
         // Hide setup, show pres
         dom.setupScreen.classList.add('hidden');
@@ -268,8 +256,8 @@ document.addEventListener('DOMContentLoaded', () => {
             slidesData[currentSlideIndex].current = current;
             slidesData[currentSlideIndex].points = points;
             
-            // Save updates to DB (Quotas, Current, AND Points)
-            updateSlideInDB(slidesData[currentSlideIndex]).catch(e => console.error("Error saving to DB", e));
+            // Save updates to LocalStorage
+            saveProgressLocked();
         }
 
         dom.displayQuota1.innerText = quota1;
@@ -375,44 +363,32 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!startTimestamp) startTimestamp = timestamp;
             const progress = Math.min((timestamp - startTimestamp) / duration, 1);
             obj.innerHTML = Math.floor(progress * (end - start) + start);
-            if (progress < 1) {() => {
-             // Clear DB on restart
-             if(confirm("¿Seguro? Se borrarán los datos guardados.")) {
-                if(db) {
-                     const tx = db.transaction('slides', 'readwrite');
-                     tx.objectStore('slides').clear();
-                }
-                showSetup();
-             }
-        }
+            if (progress < 1) {
                 window.requestAnimationFrame(step);
             }
         };
         window.requestAnimationFrame(step);
     }
+    
+    // Config Button Logic
+    dom.btnRestart.addEventListener('click', () => {
+        if(confirm("¿Volver a la configuración? Si ya guardaste datos, puedes cargar las imágenes de nuevo para continuar.")) {
+             showSetup();
+        }
+    });
 
     function setupEventListeners() {
         // Setup Screen Events
         dom.fileInput.addEventListener('change', handleFileSelect);
         dom.btnStartCustom.addEventListener('click', startCustomPresentation);
         dom.btnLoadDefault.addEventListener('click', startDefaultPresentation);
-        dom.btnRestart.addEventListener('click', showSetup);
-
+        
         // Presentation Events
         dom.btnNext.addEventListener('click', nextSlide);
         dom.btnPrev.addEventListener('click', prevSlide);
         
         dom.btnValidate.addEventListener('click', validateResult);
         
-        dom.pointBtns.forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const points = parseInt(e.target.dataset.points);
-                assignPoints(points);
-            });
-        });
-
-        dom.btnSkipPoints.addEventListener('click', closeModal);
-
         // Keyboard navigation
         document.addEventListener('keydown', (e) => {
             // Prevent navigating if we are in setup mode (check if setup screen is hidden)
@@ -421,5 +397,16 @@ document.addEventListener('DOMContentLoaded', () => {
             if(e.key === 'ArrowRight') nextSlide();
             if(e.key === 'ArrowLeft') prevSlide();
         });
+        
+        // Add "Clear Data" Button if not exists
+        if(!document.getElementById('btn-clear-data')) {
+            const btnClear = document.createElement('button');
+            btnClear.id = 'btn-clear-data';
+            btnClear.innerText = '🗑️ Borrar Datos Guardados';
+            btnClear.className = 'btn btn-outline';
+            btnClear.style.marginTop = '1rem';
+            btnClear.onclick = clearProgress;
+            dom.fileInput.parentElement.appendChild(btnClear);
+        }
     }
 });
