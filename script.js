@@ -32,21 +32,33 @@ document.addEventListener('DOMContentLoaded', () => {
         btnRestart: document.getElementById('btn-restart')
     };
 
-    // Initialize - Now waits for user
-    initSetup();
-
     // --- PERSISTENCE (IndexedDB) ---
     // Using IndexedDB to store blobs (images) + metadata
     const DB_NAME = 'PresentationDB';
     const DB_VERSION = 2; // Incremented version
-    let db;
+    let db = null; // Declare explicitly at top level scope
 
-    function openDB() {
+    // Initialize - Now waits for user
+    initSetup();
+
+    async function openDB() {
+        // If we have a db instance, verify it's not closed
+        if (db) return db;
+
         return new Promise((resolve, reject) => {
             const request = indexedDB.open(DB_NAME, DB_VERSION);
-            request.onerror = (e) => reject("Error opening DB");
+            request.onerror = (e) => {
+                console.error("DB Open Error", e);
+                reject("Error opening DB");
+            };
             request.onsuccess = (e) => {
                 db = e.target.result;
+                
+                // Add error handler for the connection itself
+                db.onerror = (event) => {
+                    console.error("Database error: " + event.target.errorCode);
+                };
+
                 resolve(db);
             };
             request.onupgradeneeded = (e) => {
@@ -60,38 +72,74 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function checkSavedSession() {
-        if (!db) await openDB();
-        return new Promise((resolve) => {
-            const tx = db.transaction('slides', 'readonly');
-            const store = tx.objectStore('slides');
-            const request = store.getAll();
-            request.onsuccess = () => {
-                const savedSlides = request.result;
-                if (savedSlides && savedSlides.length > 0) {
-                    // Restore slides (Blob is stored in DB)
-                    slidesData = savedSlides.map(s => ({
-                        ...s,
-                        image: URL.createObjectURL(s.blob) // Create valid URL from stored Blob
-                    }));
-                    
-                    // Recalculate Total Score
-                    updateTotalScore();
+        try {
+            if (!db) await openDB();
+        } catch(e) {
+            console.error("Cannot open DB for checkSavedSession", e);
+            return false;
+        }
 
-                    // Restore basics and start
-                    appConfig = { soundEffect: "assets/sounds/fanfare.mp3" };
-                    dom.audioPlayer.src = appConfig.soundEffect;
-                    dom.setupScreen.classList.add('hidden');
-                    loadSlide(0);
-                    resolve(true);
-                } else {
+        return new Promise((resolve) => {
+            try {
+                const tx = db.transaction('slides', 'readonly');
+                const store = tx.objectStore('slides');
+                const request = store.getAll();
+                
+                request.onsuccess = () => {
+                    const savedSlides = request.result;
+                    if (savedSlides && savedSlides.length > 0) {
+                        try {
+                            // Restore slides (Blob is stored in DB)
+                            slidesData = savedSlides.map(s => {
+                                // Double check if blob exists
+                                if (!s.blob) throw new Error("Missing blob in saved slide");
+                                
+                                // Legacy Data Migration: Remove index from title if present
+                                let cleanTitle = s.title || "";
+                                cleanTitle = cleanTitle.replace(/ - \d+$/, "");
+
+                                return {
+                                    ...s,
+                                    title: cleanTitle,
+                                    image: URL.createObjectURL(s.blob) 
+                                };
+                            });
+                            
+                            // Immediately save sanitized data back to DB to make it permanent
+                            saveAllSlidesToDB(slidesData).catch(e => console.log("Migration save failed", e));
+                            
+                            // Recalculate Total Score
+                            updateTotalScore();
+
+                            // Restore basics and start
+                            appConfig = { soundEffect: "assets/sounds/fanfare.mp3" };
+                            dom.audioPlayer.src = appConfig.soundEffect;
+                            dom.setupScreen.classList.add('hidden');
+                            loadSlide(0);
+                            resolve(true);
+                        } catch (err) {
+                            console.error("Error reconstituting slides from DB", err);
+                            // Corrupt data?
+                            resolve(false);
+                        }
+                    } else {
+                        resolve(false);
+                    }
+                };
+                request.onerror = (e) => {
+                    console.error("Error reading slides from DB", e);
                     resolve(false);
-                }
-            };
-            request.onerror = () => resolve(false);
+                };
+            } catch (err) {
+                console.error("Transaction error in checkSavedSession", err);
+                resolve(false);
+            }
         });
     }
 
+
     async function saveAllSlidesToDB(slides) {
+        // Ensure DB is open
         if (!db) await openDB();
         
         return new Promise((resolve, reject) => {
@@ -109,20 +157,25 @@ document.addEventListener('DOMContentLoaded', () => {
             };
 
             // Operations
-            store.clear(); 
-
-            slides.forEach(slide => {
-                const slideToStore = { 
-                    id: slide.id,
-                    title: slide.title,
-                    blob: slide.blob, // File object is serializable in IDB
-                    quota1: slide.quota1,
-                    quota3: slide.quota3,
-                    current: slide.current,
-                    points: slide.points
-                };
-                store.put(slideToStore);
-            });
+            // IMPORTANT: Don't just clear, this is a full rewrite
+            try {
+                store.clear(); 
+                slides.forEach(slide => {
+                    const slideToStore = { 
+                        id: slide.id,
+                        title: slide.title,
+                        blob: slide.blob, // File object is serializable in IDB
+                        quota1: slide.quota1,
+                        quota3: slide.quota3,
+                        current: slide.current,
+                        points: slide.points
+                    };
+                    store.put(slideToStore);
+                });
+            } catch (err) {
+                console.error("Error during store.put", err);
+                // The tx.onerror will catch this too, but logging here helps
+            }
         });
     }
 
@@ -187,7 +240,7 @@ document.addEventListener('DOMContentLoaded', () => {
         slidesData = tempFiles.map((file, index) => {
             return {
                 id: index + 1,
-                title: customTitle ? `${customTitle} - ${index + 1}` : '', 
+                title: customTitle ? customTitle : '', 
                 image: URL.createObjectURL(file), // Create blob URL for viewing
                 blob: file, // Store File for DB
                 quota1: 0,
