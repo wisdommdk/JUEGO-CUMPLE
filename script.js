@@ -153,8 +153,8 @@ document.addEventListener('DOMContentLoaded', () => {
                             updateComparativeDisplay(savedDV, savedBog);
 
                             // Restore basics and start
-                            appConfig = { soundEffect: "assets/sounds/Fans%20Cheering.mp3" };
-                            dom.audioPlayer.src = appConfig.soundEffect;
+                            appConfig = { soundEffect: "assets/sounds/Fans Cheering.mp3" };
+                            dom.audioPlayer.src = encodeURI(appConfig.soundEffect);
                             dom.setupScreen.classList.add('hidden');
                             loadSlide(0);
                             resolve(true);
@@ -339,8 +339,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         // Use default config for app settings if needed
-        appConfig = { soundEffect: "assets/sounds/Fans%20Cheering.mp3" };
-        dom.audioPlayer.src = appConfig.soundEffect;
+        appConfig = { soundEffect: "assets/sounds/Fans Cheering.mp3" };
+        dom.audioPlayer.src = encodeURI(appConfig.soundEffect);
         
         // Calc initial score
         updateTotalScore();
