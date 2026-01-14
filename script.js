@@ -62,7 +62,7 @@ document.addEventListener('DOMContentLoaded', () => {
         slidesData = tempFiles.map((file, index) => {
             return {
                 id: index + 1,
-                title: customTitle ? `${customTitle} - ${index + 1}` : file.name.split('.')[0], // Use filename as title if no custom title
+                title: customTitle ? `${customTitle} - ${index + 1}` : '', // Use filename as title if no custom title
                 image: URL.createObjectURL(file), // Create blob URL
                 defaultQuota: 0,
                 defaultCurrent: 0
