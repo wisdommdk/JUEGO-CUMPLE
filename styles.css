@@ -898,7 +898,7 @@ input[type="file"] {
         left: 2vw !important;
         top: 0 !important;
         height: 100% !important; /* Full height of container */
-        width: 28vw !important;
+        width: 22vw !important; /* Reduced from 28vw */
         transform: none !important; /* No centering transform */
         display: flex !important;
         flex-direction: column !important;
@@ -911,7 +911,7 @@ input[type="file"] {
         position: relative !important; /* Flow with items if possible, or abs top */
         top: auto !important;
         left: auto !important;
-        font-size: 2.2vh !important;
+        font-size: 2vh !important;
         margin-bottom: 1vh !important;
         text-shadow: 1px 1px 2px #000;
         max-width: 100% !important;
@@ -923,8 +923,8 @@ input[type="file"] {
         right: 2vw !important;
         top: 0 !important;
         height: 100% !important;
-        width: 40vw !important;
-        transform: none !important;
+        width: 26vw !important; /* Reduced from 40vw */
+        transform: none !important; /* No centering transform */
         display: flex !important;
         flex-direction: column !important;
         justify-content: flex-start !important; /* Start from top */
@@ -961,6 +961,7 @@ input[type="file"] {
         padding: 0.5vh !important; /* Reduced padding */
         gap: 0.2vh !important; /* Tiny gap */
         align-content: flex-start !important;
+        grid-template-columns: repeat(2, 1fr) !important; /* 2 cols for narrow width */
     }
     .stat-item {
         font-size: 1vh !important; /* Slightly smaller font */
@@ -975,7 +976,7 @@ input[type="file"] {
         position: absolute !important;
         bottom: 2vh !important; /* Above bottom edge */
         left: 2vw !important;
-        width: 30vw !important; /* Align with stats column */
+        width: 22vw !important; /* Align with stats column (22vw) */
         height: auto !important;
         background: transparent !important;
         box-shadow: none !important;
