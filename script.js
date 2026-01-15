@@ -374,10 +374,10 @@ document.addEventListener('DOMContentLoaded', () => {
         dom.displayQuota3.innerText = slide.quota3 || 0;
         dom.displayCurrent.innerText = slide.current || 0;
         
-        // Populate inputs with current values
-        dom.inputQuota1.value = slide.quota1 || 0;
-        dom.inputQuota3.value = slide.quota3 || 0;
-        dom.inputCurrent.value = slide.current || 0;
+        // Populate inputs with current values (Inputs removed, so skipping this)
+        // dom.inputQuota1.value = slide.quota1 || 0;
+        // dom.inputQuota3.value = slide.quota3 || 0;
+        // dom.inputCurrent.value = slide.current || 0;
         
         // Update Indicator
         dom.indicator.innerText = `${index + 1} / ${slidesData.length}`;
@@ -703,7 +703,7 @@ document.addEventListener('DOMContentLoaded', () => {
         dom.btnNext.addEventListener('click', nextSlide);
         dom.btnPrev.addEventListener('click', prevSlide);
         
-        dom.btnValidate.addEventListener('click', validateResult);
+        // dom.btnValidate.addEventListener('click', validateResult); // Button removed
         
         // Keyboard navigation
         document.addEventListener('keydown', (e) => {
