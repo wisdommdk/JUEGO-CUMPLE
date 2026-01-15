@@ -486,7 +486,8 @@ document.addEventListener('DOMContentLoaded', () => {
                  // Styling in JS or rely on global CSS
                  input.style.width = "80px";
                  input.style.fontSize = "inherit";
-                 input.style.color = "#000";
+                 input.style.color = "#ffffff";
+                 input.style.backgroundColor = "rgba(0,0,0,0.5)"; 
                  input.style.textAlign = "center";
                  input.style.borderRadius = "5px";
                  input.style.border = "none";
