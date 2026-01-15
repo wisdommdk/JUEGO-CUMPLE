@@ -309,7 +309,8 @@ body {
         0 0 150px #ff00de;
     z-index: 20;
     pointer-events: none;
-    white-space: nowrap;
+    white-space: pre-line; /* Changed from nowrap to allow multiline */
+    text-align: center;
     opacity: 0;
     transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
@@ -1059,4 +1060,24 @@ input[type="file"] {
     }
     .stat-value { font-size: 5vh !important; }
 
+}
+
+/* Falling Logo Animation */
+.falling-logo {
+    position: fixed;
+    top: -100px;
+    z-index: 9999;
+    user-select: none;
+    pointer-events: none;
+    animation: fall linear forwards;
+    opacity: 0.9;
+}
+
+@keyframes fall {
+    0% {
+        transform: translateY(-10vh) rotate(0deg);
+    }
+    100% {
+        transform: translateY(110vh) rotate(360deg);
+    }
 }

@@ -604,12 +604,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const banner = document.getElementById('celebration-banner');
         
         if (points === 3) {
-            banner.innerText = "¡LOGRAMOS LA CUOTA!";
+            banner.innerText = "¡LOGRAMOS LA CUOTA!\n+3 PUNTOS";
             banner.style.color = "var(--gold)";
             // Ensure DB is synced after points assignment
             updateSlideInDB(slidesData[currentSlideIndex]);
         } else {
-            banner.innerText = "¡LOGRAMOS LA CUOTA!";
+            banner.innerText = "¡LOGRAMOS LA CUOTA!\n+1 PUNTO";
             banner.style.color = "#fff";
             // Ensure DB is synced after points assignment
             updateSlideInDB(slidesData[currentSlideIndex]);
@@ -652,6 +652,40 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Sound
         playFanfare();
+        
+        // Logo Rain
+        rainLogos();
+    }
+
+    function rainLogos() {
+        // Logo file should be at this path
+        const logoSrc = 'assets/images/file.png';
+        const count = 40; // Number of logos to drop
+        const container = document.body;
+
+        for (let i = 0; i < count; i++) {
+            const img = document.createElement('img');
+            img.src = logoSrc;
+            img.className = 'falling-logo';
+            
+            // Random properties
+            const left = Math.random() * 95; // 0-95vw
+            const duration = Math.random() * 3 + 2; // 2-5s fall time
+            const delay = Math.random() * 2; // 0-2s delay
+            const size = Math.random() * 50 + 40; // 40-90px width
+
+            img.style.left = `${left}vw`;
+            img.style.animationDuration = `${duration}s`;
+            img.style.animationDelay = `${delay}s`;
+            img.style.width = `${size}px`;
+            
+            container.appendChild(img);
+
+            // Cleanup after animation
+            setTimeout(() => {
+                if (img.parentElement) img.remove();
+            }, (duration + delay + 1) * 1000);
+        }
     }
 
     function playFanfare() {
