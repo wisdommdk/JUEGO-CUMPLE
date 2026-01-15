@@ -13,10 +13,7 @@ document.addEventListener('DOMContentLoaded', () => {
         displayQuota1: document.getElementById('display-quota-1'),
         displayQuota3: document.getElementById('display-quota-3'),
         displayCurrent: document.getElementById('display-current'),
-        inputQuota1: document.getElementById('input-quota-1'),
-        inputQuota3: document.getElementById('input-quota-3'),
-        inputCurrent: document.getElementById('input-current'),
-        btnValidate: document.getElementById('btn-validate'),
+        // Inputs & Validate Btn removed -- accessed via inline edit
         btnPrev: document.getElementById('btn-prev'),
         btnNext: document.getElementById('btn-next'),
         indicator: document.getElementById('slide-indicator'),
@@ -252,6 +249,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function initSetup() {
         setupEventListeners();
+        enableStatBoxEditing(); // Add inline editing capability
         
         // Restore config inputs if available
         if(dom.configDelVallePoints) dom.configDelVallePoints.value = localStorage.getItem('pres_delVallePoints') || '';
@@ -466,13 +464,89 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    function validateResult() {
-        // Sync inputs to display
-        const quota1 = parseFloat(dom.inputQuota1.value) || 0;
-        const quota3 = parseFloat(dom.inputQuota3.value) || 0;
-        const current = parseFloat(dom.inputCurrent.value) || 0;
 
-        // Determine points for THIS slide
+    // Enable click-to-edit behavior for stats
+    function enableStatBoxEditing() {
+        // Generic handler for making a stat box interactive
+        const setupBox = (element, fieldName) => {
+            if (!element) return;
+            // Ensure parent container is reachable for styling cursor
+            element.parentElement.style.cursor = "pointer";
+            element.parentElement.title = "Click to Edit";
+            
+            element.parentElement.addEventListener('click', () => {
+                 // Avoid re-creating if input already exists
+                 if (element.querySelector('input')) return;
+                 
+                 const currentValue = element.innerText;
+                 const input = document.createElement('input');
+                 input.type = 'number';
+                 input.value = currentValue;
+                 input.className = 'inline-stat-input';
+                 // Styling in JS or rely on global CSS
+                 input.style.width = "80px";
+                 input.style.fontSize = "inherit";
+                 input.style.color = "#000";
+                 input.style.textAlign = "center";
+                 input.style.borderRadius = "5px";
+                 input.style.border = "none";
+                 input.style.padding = "5px";
+
+                 element.innerHTML = '';
+                 element.appendChild(input);
+                 input.focus();
+                 input.select(); /* highlight all */
+
+                 // Save on Blur or Enter
+                 const save = () => {
+                     const newValue = parseInt(input.value) || 0;
+                     element.innerText = newValue; // revert to text
+                     // Trigger logic
+                     updateStatValue(fieldName, newValue);
+                 };
+
+                 input.addEventListener('blur', save);
+                 input.addEventListener('keydown', (e) => {
+                     if (e.key === 'Enter') {
+                         input.blur();
+                     }
+                 });
+                 
+                 // Prevent click from bubbling up and restarting edit immediately
+                 input.addEventListener('click', (e) => e.stopPropagation());
+            });
+        };
+
+        setupBox(dom.displayQuota1, 'quota1');
+        setupBox(dom.displayQuota3, 'quota3');
+        setupBox(dom.displayCurrent, 'current');
+    }
+
+    // Logic equivalent to old Validate Button
+    function updateStatValue(field, value) {
+        if (!slidesData[currentSlideIndex]) return;
+        
+        slidesData[currentSlideIndex][field] = value;
+        
+        // If "current" changed, we should re-run validation logic
+        if (field === 'current') {
+            validateResult();
+        } else {
+             // Just save if quota changed
+             updateSlideInDB(slidesData[currentSlideIndex]);
+        }
+    }
+
+    // Validate Result Logic (Refactored to read from data, not inputs)
+    function validateResult() {
+        if (!slidesData || slidesData.length === 0) return;
+        
+        const slide = slidesData[currentSlideIndex];
+        const current = slide.current;
+        const quota1 = slide.quota1;
+        const quota3 = slide.quota3;
+        
+        // Calculate Points using same logic
         let points = 0;
         if (current >= quota3 && quota3 > 0) {
             points = 3;
@@ -481,22 +555,18 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         // Get previous points
-        const previousPoints = slidesData[currentSlideIndex].points || 0;
+        const previousPoints = slide.points || 0;
 
         // Update Data Model
-        if (slidesData[currentSlideIndex]) {
-            slidesData[currentSlideIndex].quota1 = quota1;
-            slidesData[currentSlideIndex].quota3 = quota3;
-            slidesData[currentSlideIndex].current = current;
-            slidesData[currentSlideIndex].points = points;
-            
-            // Save updates to DB
-            updateSlideInDB(slidesData[currentSlideIndex]).catch(e => console.error("Error saving to DB", e));
-        }
+        slide.points = points;
         
-        // Refresh markers
+        // Save updates to DB
+        updateSlideInDB(slide).catch(e => console.error("Error saving to DB", e));
+        
+        // Refresh grid markers
         updateStatsMarkers();
 
+        // Refresh Text
         dom.displayQuota1.innerText = quota1;
         dom.displayQuota3.innerText = quota3;
         dom.displayCurrent.innerText = current;
@@ -509,7 +579,7 @@ document.addEventListener('DOMContentLoaded', () => {
              // Only celebrate if we improved the score
              setTimeout(() => {
                 triggerCelebration(points, previousPoints);
-            }, 1000);
+            }, 500); // Faster reaction
         } else {
             // Just update total score if no celebration needed
              updateTotalScore();
