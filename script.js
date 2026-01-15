@@ -533,12 +533,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const banner = document.getElementById('celebration-banner');
         
         if (points === 3) {
-            banner.innerText = "¡META SUPERADA!\n+3 PUNTOS";
+            banner.innerText = "¡LOGRAMOS LA CUOTA!";
             banner.style.color = "var(--gold)";
             // Ensure DB is synced after points assignment
             updateSlideInDB(slidesData[currentSlideIndex]);
         } else {
-            banner.innerText = "¡META CUMPLIDA!\n+1 PUNTO";
+            banner.innerText = "¡LOGRAMOS LA CUOTA!";
             banner.style.color = "#fff";
             // Ensure DB is synced after points assignment
             updateSlideInDB(slidesData[currentSlideIndex]);
