@@ -660,21 +660,28 @@ document.addEventListener('DOMContentLoaded', () => {
     function rainLogos() {
         // Logo file should be at this path
         const logoSrc = 'assets/images/file.png';
-        const count = 40; // Number of logos to drop
+        const count = 60; // Increased count for fountain effect
         const container = document.body;
 
         for (let i = 0; i < count; i++) {
             const img = document.createElement('img');
             img.src = logoSrc;
-            img.className = 'falling-logo';
+            img.className = 'fountain-logo';
             
-            // Random properties
-            const left = Math.random() * 95; // 0-95vw
-            const duration = Math.random() * 3 + 2; // 2-5s fall time
-            const delay = Math.random() * 2; // 0-2s delay
-            const size = Math.random() * 50 + 40; // 40-90px width
+            // Random properties for the fountain
+            // Spread: -80vw to +80vw (wide spread)
+            const randomX = (Math.random() * 160 - 80); 
+            // Rotation: random spin
+            const randomRot = (Math.random() * 720 - 360);
+            
+            const duration = Math.random() * 3 + 2; // 2-5s float time
+            const delay = Math.random() * 1.5; // Burst delay
+            const size = Math.random() * 60 + 40; // Size variation
 
-            img.style.left = `${left}vw`;
+            // Set CSS Variables for the specific element
+            img.style.setProperty('--x-dest', `${randomX}vw`);
+            img.style.setProperty('--rot-dest', `${randomRot}deg`);
+
             img.style.animationDuration = `${duration}s`;
             img.style.animationDelay = `${delay}s`;
             img.style.width = `${size}px`;

@@ -1062,22 +1062,32 @@ input[type="file"] {
 
 }
 
-/* Falling Logo Animation */
-.falling-logo {
+/* Fountain Logo Animation */
+.fountain-logo {
     position: fixed;
-    top: -100px;
+    bottom: -150px; /* Start well below screen */
+    left: 50%; /* Center start */
     z-index: 9999;
     user-select: none;
     pointer-events: none;
-    animation: fall linear forwards;
-    opacity: 0.9;
+    opacity: 0;
+    transform: translateX(-50%); /* Center anchor */
+    animation: fountain ease-out forwards;
 }
 
-@keyframes fall {
+@keyframes fountain {
     0% {
-        transform: translateY(-10vh) rotate(0deg);
+        opacity: 0;
+        transform: translateX(-50%) translateY(0) scale(0.3) rotate(0deg);
+        bottom: -150px;
+    }
+    10% {
+        opacity: 1;
     }
     100% {
-        transform: translateY(110vh) rotate(360deg);
+        opacity: 0;
+        /* Move up and outwards based on CSS var */
+        transform: translateX(calc(-50% + var(--x-dest))) translateY(-130vh) scale(1.2) rotate(var(--rot-dest));
+        bottom: -150px; 
     }
 }
