@@ -54,6 +54,45 @@ body {
     transition: background 0.3s;
 }
 
+/* Background Animation */
+.animated-bg {
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    z-index: 0;
+    transform: rotate(-45deg);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+.bg-text-line {
+    font-size: 20vh; /* Muy grande */
+    font-weight: 900;
+    color: rgba(200, 200, 200, 0.03); /* Gris muy tenue */
+    white-space: nowrap;
+    line-height: 0.85;
+    text-transform: uppercase;
+    /* Animation */
+    animation: move-diagonal 20s linear infinite;
+}
+
+/* Move along the rotated X-axis (which is diagonal) */
+@keyframes move-diagonal {
+    0% {
+        transform: translateX(-10%);
+    }
+    100% {
+        transform: translateX(10%);
+    }
+}
+
+
 .content-wrapper {
     position: relative;
     z-index: 2;
