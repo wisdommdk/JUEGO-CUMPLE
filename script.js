@@ -50,6 +50,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- SOUNDS ---
     const slotSound = new Audio('assets/sounds/slot-numbers.mp3');
     slotSound.loop = true;
+    slotSound.playbackRate = 3.5; // Accelerated for slot machine effect
     const winSound = new Audio('assets/sounds/slot-win.mp3');
 
     // Helper to update comparative scores and difference
