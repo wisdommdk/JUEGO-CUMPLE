@@ -80,6 +80,16 @@ document.addEventListener('DOMContentLoaded', () => {
     renderStatsList(); // Render empty or predefined list on load
 
     async function openDB() {
+        // iOS Persistence Warning Check
+        if (navigator.storage && navigator.storage.persist) {
+            const isPersisted = await navigator.storage.persisted();
+            if (!isPersisted) {
+                console.log("Storage not persisted, requesting...");
+                const result = await navigator.storage.persist();
+                console.log(`Storage persist request result: ${result}`);
+            }
+        }
+
         // If we have a db instance, verify it's not closed
         if (db) return db;
 
@@ -130,21 +140,32 @@ document.addEventListener('DOMContentLoaded', () => {
                             // Restore slides (Blob is stored in DB)
                             slidesData = savedSlides.map(s => {
                                 // Double check if blob exists
-                                if (!s.blob) throw new Error("Missing blob in saved slide");
+                                if (!s.blob) {
+                                    // Try to recover gracefully if only one is corrupt, or fail block
+                                    console.warn("Missing blob in saved slide with id", s.id);
+                                    // If strictly needed, we might throw, but let's try to survive
+                                    // return null; 
+                                }
                                 
                                 // Legacy Data Migration: Remove index from title if present
                                 let cleanTitle = s.title || "";
                                 cleanTitle = cleanTitle.replace(/ - \d+$/, "");
+                                
+                                // If blob is missing, use a placeholder or handle error
+                                const imgUrl = s.blob ? URL.createObjectURL(s.blob) : '';
 
                                 return {
                                     ...s,
                                     title: cleanTitle,
-                                    image: URL.createObjectURL(s.blob) 
+                                    image: imgUrl
                                 };
                             });
                             
                             // Immediately save sanitized data back to DB to make it permanent
-                            saveAllSlidesToDB(slidesData).catch(e => console.log("Migration save failed", e));
+                            // (Only if we successfully mapped)
+                            if(slidesData.length > 0) {
+                                saveAllSlidesToDB(slidesData).catch(e => console.log("Migration save failed", e));
+                            }
                             
                             // Recalculate Total Score
                             updateTotalScore();
