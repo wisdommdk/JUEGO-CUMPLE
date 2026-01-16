@@ -47,6 +47,11 @@ document.addEventListener('DOMContentLoaded', () => {
         "BIS/BISS", "NNCF", "NAMF", "NFSMC", "PCTRISFNC", "PDC"
     ];
 
+    // --- SOUNDS ---
+    const slotSound = new Audio('assets/sounds/slot-numbers.mp3');
+    slotSound.loop = true;
+    const winSound = new Audio('assets/sounds/slot-win.mp3');
+
     // Helper to update comparative scores and difference
     function updateComparativeDisplay(delValle, bogota) {
         dom.displayDelValle.innerText = delValle;
@@ -570,21 +575,32 @@ document.addEventListener('DOMContentLoaded', () => {
         // Refresh Text
         dom.displayQuota1.innerText = quota1;
         dom.displayQuota3.innerText = quota3;
-        dom.displayCurrent.innerText = current;
+        // dom.displayCurrent.innerText = current; // Removed to let animation handle it
+
+        // Play Slot Sound (Looping)
+        slotSound.currentTime = 0;
+        slotSound.play().catch(e => console.log("Audio play error", e));
 
         // Animation logic
-        animateValue(dom.displayCurrent, 0, current, 1000);
+        animateValue(dom.displayCurrent, 0, current, 2000, () => {
+            // Animation Complete
+            slotSound.pause();
 
-        // Check if points changed for this slide
-        if (points > previousPoints) {
-             // Only celebrate if we improved the score
-             setTimeout(() => {
-                triggerCelebration(points, previousPoints);
-            }, 500); // Faster reaction
-        } else {
-            // Just update total score if no celebration needed
-             updateTotalScore();
-        }
+            // Win Sound if any quota reached
+            if ((current >= quota1 && quota1 > 0) || (current >= quota3 && quota3 > 0)) {
+                 winSound.currentTime = 0;
+                 winSound.play().catch(e => console.log("Audio play error", e));
+            }
+
+            // Check if points changed for this slide
+            if (points > previousPoints) {
+                 // Trigger existing celebration
+                 triggerCelebration(points, previousPoints);
+            } else {
+                // Just update total score if no celebration needed
+                 updateTotalScore();
+            }
+        });
     }
 
     function updateTotalScore(newPointsForSlide) {
@@ -716,7 +732,7 @@ document.addEventListener('DOMContentLoaded', () => {
         dom.pointsModal.classList.remove('visible');
     }
 
-    function animateValue(obj, start, end, duration) {
+    function animateValue(obj, start, end, duration, callback) {
         let startTimestamp = null;
         const step = (timestamp) => {
             if (!startTimestamp) startTimestamp = timestamp;
@@ -724,6 +740,8 @@ document.addEventListener('DOMContentLoaded', () => {
             obj.innerHTML = Math.floor(progress * (end - start) + start);
             if (progress < 1) {
                 window.requestAnimationFrame(step);
+            } else {
+                if(callback) callback();
             }
         };
         window.requestAnimationFrame(step);
