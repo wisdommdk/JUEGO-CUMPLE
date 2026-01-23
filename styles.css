@@ -981,8 +981,8 @@ input[type="file"] {
         flex-direction: column !important;
     }
 
-    .score-value { font-size: 5vh !important; margin: 0 !important; line-height: 1 !important; }
-    .score-label { font-size: 1.8vh !important; margin-bottom: 0.5vh !important; }
+    .score-value { font-size: 5.5vh !important; margin: 0 !important; line-height: 1 !important; }
+    .score-label { font-size: 2vh !important; margin-bottom: 0.5vh !important; }
 
     /* Extra Scores */
     .extra-scores-container {
@@ -991,8 +991,8 @@ input[type="file"] {
         display: block !important;
     }
     .extra-score-row { padding: 0.2vh 0.5vw !important; margin-bottom: 0.5vh !important; }
-    .extra-flag { font-size: 2vh !important; }
-    .extra-value { font-size: 2vh !important; }
+    .extra-flag { font-size: 2.2vh !important; }
+    .extra-value { font-size: 2.2vh !important; }
 
     /* Stats Grid */
     .stats-grid {
@@ -1004,7 +1004,7 @@ input[type="file"] {
         grid-template-columns: repeat(2, 1fr) !important; /* 2 cols for narrow width */
     }
     .stat-item {
-        font-size: 1vh !important; /* Slightly smaller font */
+        font-size: 1.1vh !important; /* Slightly smaller font */
         padding: 0.2vh !important; /* Minimal padding */
         min-height: auto !important;
         border: 1px solid rgba(255,255,255,0.1) !important;
