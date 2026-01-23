@@ -938,7 +938,7 @@ input[type="file"] {
         left: 2vw !important;
         top: 0 !important;
         height: 100% !important; /* Full height of container */
-        width: 22vw !important; /* Reduced from 28vw */
+        width: 24vw !important; /* Reduced from 28vw */
         transform: none !important; /* No centering transform */
         display: flex !important;
         flex-direction: column !important;
@@ -951,7 +951,7 @@ input[type="file"] {
         position: relative !important; /* Flow with items if possible, or abs top */
         top: auto !important;
         left: auto !important;
-        font-size: 2vh !important;
+        font-size: 2.2vh !important;
         margin-bottom: 1vh !important;
         text-shadow: 1px 1px 2px #000;
         max-width: 100% !important;
@@ -963,7 +963,7 @@ input[type="file"] {
         right: 2vw !important;
         top: 0 !important;
         height: 100% !important;
-        width: 26vw !important; /* Reduced from 40vw */
+        width: 28vw !important; /* Reduced from 40vw */
         transform: none !important; /* No centering transform */
         display: flex !important;
         flex-direction: column !important;
@@ -975,14 +975,14 @@ input[type="file"] {
     /* Score Container (Puntos fundacion) */
     .score-container {
         width: 100% !important;
-        padding: 1vh !important;
+        padding: 1.1vh !important;
         flex-shrink: 0 !important; /* Make sure this doesn't shrink to 0 */
         display: flex !important;
         flex-direction: column !important;
     }
 
-    .score-value { font-size: 5.5vh !important; margin: 0 !important; line-height: 1 !important; }
-    .score-label { font-size: 2vh !important; margin-bottom: 0.5vh !important; }
+    .score-value { font-size: 6vh !important; margin: 0 !important; line-height: 1 !important; }
+    .score-label { font-size: 2.2vh !important; margin-bottom: 0.5vh !important; }
 
     /* Extra Scores */
     .extra-scores-container {
@@ -991,8 +991,8 @@ input[type="file"] {
         display: block !important;
     }
     .extra-score-row { padding: 0.2vh 0.5vw !important; margin-bottom: 0.5vh !important; }
-    .extra-flag { font-size: 2.2vh !important; }
-    .extra-value { font-size: 2.2vh !important; }
+    .extra-flag { font-size: 2.4vh !important; }
+    .extra-value { font-size: 2.4vh !important; }
 
     /* Stats Grid */
     .stats-grid {
@@ -1004,7 +1004,7 @@ input[type="file"] {
         grid-template-columns: repeat(2, 1fr) !important; /* 2 cols for narrow width */
     }
     .stat-item {
-        font-size: 1.1vh !important; /* Slightly smaller font */
+        font-size: 1.2vh !important; /* Slightly smaller font */
         padding: 0.2vh !important; /* Minimal padding */
         min-height: auto !important;
         border: 1px solid rgba(255,255,255,0.1) !important;
@@ -1016,7 +1016,7 @@ input[type="file"] {
         position: absolute !important;
         bottom: 2vh !important; /* Above bottom edge */
         left: 2vw !important;
-        width: 22vw !important; /* Align with stats column (22vw) */
+        width: 24vw !important; /* Align with stats column (22vw) */
         height: auto !important;
         background: transparent !important;
         box-shadow: none !important;
@@ -1043,8 +1043,8 @@ input[type="file"] {
     
     input[type="number"] { 
         width: 100% !important; 
-        height: 5vh !important; 
-        font-size: 2vh !important;
+        height: 5.5vh !important; 
+        font-size: 2.2vh !important;
         padding: 0.5vh !important;
         text-align: center;
         background: rgba(0,0,0,0.5) !important;
@@ -1053,9 +1053,9 @@ input[type="file"] {
     /* Validate Button */
     #btn-validate {
         width: 100% !important;
-        height: 5vh !important;
+        height: 5.5vh !important;
         padding: 0 !important;
-        font-size: 2vh !important;
+        font-size: 2.2vh !important;
         background: var(--success) !important;
     }
 
@@ -1069,8 +1069,8 @@ input[type="file"] {
     
     .nav-buttons .btn {
         flex: 1 !important;
-        height: 5vh !important;
-        font-size: 1.8vh !important;
+        height: 5.5vh !important;
+        font-size: 2vh !important;
         background: rgba(255,255,255,0.1) !important;
         border: 1px solid rgba(255,255,255,0.2) !important;
     }
@@ -1095,9 +1095,9 @@ input[type="file"] {
     }
     
     .stat-box {
-        padding: 1vh 1vw !important;
+        padding: 1.1vh 1vw !important;
     }
-    .stat-value { font-size: 5vh !important; }
+    .stat-value { font-size: 5.5vh !important; }
 
 }
 
