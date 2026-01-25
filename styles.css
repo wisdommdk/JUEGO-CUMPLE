@@ -960,10 +960,10 @@ input[type="file"] {
     /* --- RIGHT SIDE: SIDEBAR --- */
     #right-sidebar {
         position: absolute !important;
-        right: 2vw !important;
+        right: 1vw !important; /* Move slightly more to right edge */
         top: 0 !important;
         height: 100% !important;
-        width: 30vw !important; /* Reduced from 40vw */
+        width: 40vw !important; /* Increased from 30vw */
         transform: none !important; /* No centering transform */
         display: flex !important;
         flex-direction: column !important;
