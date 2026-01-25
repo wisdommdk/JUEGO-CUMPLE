@@ -42,7 +42,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- STAT NAMES CONFIG ---
     const STAT_NAMES = [
-        "QSH", "FHS", "GI", "GBS", "CASH/BILLS W/O", "CASH/BILLS W CSI", "CASH", 
+        "QSH", "FHS", "GI", "GBS", "CASH/BILLS W/O", "CASH/BILLS W CSI", 
         "ASSETRES", "VSD", "STP", "WDAH", "QTSM", "GIBY", 
         "BIS", "BISS", "NNCF", "PUBCOMPS", "NAMF", "NFSMC", "PCTRISFNC", "PDC"
     ];
