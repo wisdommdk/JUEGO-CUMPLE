@@ -960,10 +960,10 @@ input[type="file"] {
     /* --- RIGHT SIDE: SIDEBAR --- */
     #right-sidebar {
         position: absolute !important;
-        right: 1vw !important; /* Move slightly more to right edge */
+        right: 2vw !important;
         top: 0 !important;
         height: 100% !important;
-        width: 40vw !important; /* Increased from 30vw */
+        width: 30vw !important; /* Reduced from 40vw */
         transform: none !important; /* No centering transform */
         display: flex !important;
         flex-direction: column !important;
@@ -1105,6 +1105,25 @@ input[type="file"] {
     }
     .stat-value { font-size: 8vh !important; font-weight: 800 !important; }
     .stat-label { font-size: 2.4vh !important; font-weight: 700 !important; }
+
+    /* Specific adjustment for long stat names (CASH/BILLS) positions 5 and 6 */
+    /* Assuming these map to specific indices, we target them by child index if possible,
+       but dynamic CSS is safer via class injection. Or we rely on text fit.
+       Since we can't easily target by text content in pure CSS without JS adding classes, 
+       we will add a class in JS logic or target Nth child if we know it's a grid. 
+       BUT here we are in grid.
+       Ah, the user meant the RIGHT PANEL LIST items 5 & 6? Or the main title? 
+       "estadística número 5 es muy grande su nombre" refers probably to the GRID on right sidebar. */
+    
+    .stats-grid .stat-item:nth-child(5),
+    .stats-grid .stat-item:nth-child(6) {
+        font-size: 1.4vh !important; /* Smaller size for long text */
+        line-height: 1.1;
+        white-space: normal; /* Allow wrapping */
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
 
 }
 
