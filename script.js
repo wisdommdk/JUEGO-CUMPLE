@@ -44,7 +44,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const STAT_NAMES = [
         "QSH", "FHS", "GI", "GBS", "CASH/BILLS W/O", "CASH/BILLS W CSI", 
         "ASSETRES", "VSD", "STP", "WDAH", "QTSM", "GIBY", 
-        "BIS", "BISS", "NNCF", "PUBCOMPS", "NAMF", "NFSMC", "PCTRISFNC", "PDC"
+        "BIS/BISS", "NNCF", "PUBCOMPS/RSN", "NAMF", "NFSMC", "PCTRISFNC", "PDC"
     ];
 
     // --- SOUNDS ---
@@ -318,8 +318,12 @@ document.addEventListener('DOMContentLoaded', () => {
         updateComparativeDisplay(delVallePoints, bogotaPoints);
 
         // Sort files to ensure sequence matches mapping
-        // Using numeric sort so Page_10 comes after Page_9, not Page_1
-        tempFiles.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' }));
+        // We use a regex to extract the number from Page_X and sort numerically
+        tempFiles.sort((a, b) => {
+            const pageA = parseInt(a.name.match(/Page_(\d+)/)?.[1] || 0, 10);
+            const pageB = parseInt(b.name.match(/Page_(\d+)/)?.[1] || 0, 10);
+            return pageA - pageB;
+        });
         
         // New Session with FRESH files
         slidesData = tempFiles.map((file, index) => {
